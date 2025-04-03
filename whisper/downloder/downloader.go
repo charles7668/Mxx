@@ -119,6 +119,9 @@ func Download(ctx context.Context, modelName, dir string, progress func(float32,
 				}
 			}
 		}
+		lock.Lock()
+		delete(downloadingTask, taskQueryKey)
+		lock.Unlock()
 	}()
 
 	return nil
