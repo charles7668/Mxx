@@ -42,10 +42,26 @@ func TestDownload(t *testing.T) {
 		}
 	})
 
+	// test model already exists
 	if err != nil {
 		t.Fatalf("download failed: %v", err)
 	}
 	<-ctx.Done()
+	ctx, cancel = context.WithCancel(context.Background())
+	var downloadErr error
+	err = Download(ctx, modelName, tempDir, func(progress float32, err error) {
+		defer cancel()
+		if progress < 100 {
+			downloadErr = errors.New("when file already exists, progress should be 100")
+		}
+	})
+	if err != nil {
+		t.Fatalf("download failed: %v", err)
+	}
+	<-ctx.Done()
+	if downloadErr != nil {
+		t.Fatalf("download failed: %v", downloadErr)
+	}
 }
 
 func TestDownloadingCheck(t *testing.T) {
