@@ -23,8 +23,9 @@ func (converter *AudioConverter) Convert(input, output string) error {
 		ffmpegPath = "ffmpeg"
 	}
 
-	cmd := exec.Command(fmt.Sprintf("%s -i %s -ar 16000 -ac 1 -c:a pcm_s16le %s", ffmpegPath, input, output))
-	err := cmd.Run()
+	cmd := exec.Command(ffmpegPath, "-y", "-i", input, "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", output)
+	out, err := cmd.CombinedOutput()
+	fmt.Println(string(out))
 	if err != nil {
 		return fmt.Errorf("failed to convert audio: %w", err)
 	}

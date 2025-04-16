@@ -19,7 +19,7 @@ func TestAudioConverter_Convert(t *testing.T) {
 
 	outputFile := filepath.Join(testDir, "output.wav")
 
-	converter := CreateAudioConverter("ffmpeg")
+	converter := CreateAudioConverter("")
 
 	err := converter.Convert(inputFile, outputFile)
 	if err != nil {
@@ -28,7 +28,7 @@ func TestAudioConverter_Convert(t *testing.T) {
 }
 
 func TestAudioConverter_Convert_InputFileDoesNotExist(t *testing.T) {
-	converter := CreateAudioConverter("ffmpeg")
+	converter := CreateAudioConverter("")
 
 	nonExistentInput := "nonexistent-input.wav"
 	outputFile := "output.wav"
