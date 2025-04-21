@@ -64,17 +64,19 @@ func Transcribe(ctx context.Context, filePath, modelName string, transcribeOptio
 	log.Println("starting transcription for file: ", filePath)
 	log.Println("using model: ", modelName)
 	whisperContext.ResetTimings()
-	if err = whisperContext.Process(data, encoderCallback, nil, transcribeOptions.progressCallback); err != nil {
+	if err = whisperContext.Process(data, encoderCallback, transcribeOptions.SegmentCallback, transcribeOptions.ProgressCallback); err != nil {
 		return errors.New("failed to process audio: " + err.Error())
 	}
-	whisperContext.PrintTimings()
-	if err = Output(whisperContext); err != nil {
-		return errors.New("failed to output: " + err.Error())
-	}
+
+	//whisperContext.PrintTimings()
+	//if err = Output(whisperContext); err != nil {
+	//	return errors.New("failed to output: " + err.Error())
+	//}
 
 	return nil
 }
 
+// Output prints the segments to stdout
 func Output(context whisper.Context) error {
 	for {
 		segment, err := context.NextSegment()
