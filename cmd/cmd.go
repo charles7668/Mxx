@@ -26,6 +26,7 @@ func Run(options RunOptions) error {
 	// try to convert the media file to wav
 	audioConverter := converter.CreateAudioConverter("ffmpeg")
 	err = audioConverter.Convert(options.inputFile, tempFile)
+	defer os.RemoveAll(tempPath)
 	if err != nil {
 		return fmt.Errorf("failed to convert audio file %s : %v", options.inputFile, err)
 	}
