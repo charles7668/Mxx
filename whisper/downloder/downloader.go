@@ -50,9 +50,7 @@ func Download(ctx context.Context, modelName, dir string, progress func(float32,
 	downloadingTask[taskQueryKey] = cancelFunc
 	lock.Unlock()
 	go func() {
-		client := &http.Client{
-			Timeout: 30 * time.Second,
-		}
+		client := &http.Client{}
 		req, err := http.NewRequest("GET", downloadUrl, nil)
 		if err != nil {
 			progress(0, err)
