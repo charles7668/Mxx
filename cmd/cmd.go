@@ -1,20 +1,33 @@
 package cmd
 
 import (
+	"Mxx/ffmpeg/converter"
 	"Mxx/whisper/downloder"
 	"Mxx/whisper/transcription"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/ggerganov/whisper.cpp/bindings/go/pkg/whisper"
+	"github.com/google/uuid"
 	"os"
 	"path/filepath"
 	"time"
 )
 
 func Run(options RunOptions) error {
-	if filepath.Ext(options.inputFile) != ".wav" {
-		return errors.New("input file must be a .wav file")
+	tempUUID, err := uuid.NewUUID()
+	if err != nil {
+		return fmt.Errorf("failed to generate uuid for create temp path : %v", err)
+	}
+	tempPath := tempUUID.String()
+	if err := os.MkdirAll(tempPath, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create temp path %s : %v", tempPath, err)
+	}
+	tempFile := filepath.Join(tempPath, "output.wav")
+	// try to convert the media file to wav
+	audioConverter := converter.CreateAudioConverter("ffmpeg")
+	err = audioConverter.Convert(options.inputFile, tempFile)
+	if err != nil {
+		return fmt.Errorf("failed to convert audio file %s : %v", options.inputFile, err)
 	}
 	backgroundCtx := context.Background()
 	model := options.model
@@ -60,7 +73,7 @@ func Run(options RunOptions) error {
 	}
 	ctx, cancel := context.WithCancel(backgroundCtx)
 	fmt.Printf("Transcribing file %s...\n", options.inputFile)
-	err := transcription.Transcribe(ctx, options.inputFile, model, transcriptionOptions)
+	err = transcription.Transcribe(ctx, tempFile, model, transcriptionOptions)
 	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to transcribe file %s : %v", options.inputFile, err)
