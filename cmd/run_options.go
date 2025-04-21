@@ -1,4 +1,6 @@
 package cmd
 
 type RunOptions struct {
+	inputFile  string
+	outputFile string
 }

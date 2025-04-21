@@ -12,5 +12,9 @@ func main() {
 		_, _ = os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
 	}
-	cmd.Run(options)
+	err = cmd.Run(options)
+	if err != nil {
+		_, _ = os.Stderr.WriteString(err.Error() + "\n")
+		os.Exit(1)
+	}
 }
