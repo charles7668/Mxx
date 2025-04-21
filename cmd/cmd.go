@@ -17,7 +17,12 @@ func Run(options RunOptions) error {
 		return errors.New("input file must be a .wav file")
 	}
 	backgroundCtx := context.Background()
-	if _, err := os.Stat("tiny.en.bin"); os.IsNotExist(err) {
+	model := options.model
+	modelFile := model
+	if filepath.Ext(model) != ".bin" {
+		modelFile = model + ".bin"
+	}
+	if _, err := os.Stat(modelFile); os.IsNotExist(err) {
 		fmt.Println("Model file not found, start downloading...")
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -25,7 +30,7 @@ func Run(options RunOptions) error {
 		}
 		ctx, cancel := context.WithCancel(backgroundCtx)
 		var downloadErr error
-		err = downloder.Download(ctx, "tiny.en", cwd, func(progress float32, err error) {
+		err = downloder.Download(ctx, model, cwd, func(progress float32, err error) {
 			if err != nil {
 				downloadErr = err
 				cancel()
@@ -37,11 +42,11 @@ func Run(options RunOptions) error {
 			}
 		})
 		if err != nil {
-			return fmt.Errorf("failed to download model %s : %v", "tiny.en", err)
+			return fmt.Errorf("failed to download model %s : %v", model, err)
 		}
 		<-ctx.Done()
 		if downloadErr != nil {
-			return fmt.Errorf("failed to download model %s : %v", "tiny.en", downloadErr)
+			return fmt.Errorf("failed to download model %s : %v", model, downloadErr)
 		}
 	}
 	transcriptionOptions := transcription.CreateOptions()
@@ -55,7 +60,7 @@ func Run(options RunOptions) error {
 	}
 	ctx, cancel := context.WithCancel(backgroundCtx)
 	fmt.Printf("Transcribing file %s...\n", options.inputFile)
-	err := transcription.Transcribe(ctx, options.inputFile, "tiny.en", transcriptionOptions)
+	err := transcription.Transcribe(ctx, options.inputFile, model, transcriptionOptions)
 	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to transcribe file %s : %v", options.inputFile, err)

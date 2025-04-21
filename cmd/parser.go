@@ -11,6 +11,8 @@ func ParseArgs(args []string) (RunOptions, error) {
 	fs.StringVar(inputFile, "input", "", "Path to the input file (alias for -i)")
 	outputFile := fs.String("o", "", "Path to the output file")
 	fs.StringVar(outputFile, "output", "", "Path to the output file (alias for -o)")
+	model := fs.String("m", "tiny.en", "Whisper model name , you can see all support list in https://github.com/ggml-org/whisper.cpp/blob/master/models/README.md")
+	fs.StringVar(model, "model", "tiny.en", "Whisper model name (alias for -m)")
 
 	err := fs.Parse(args[1:])
 	if err != nil {
@@ -24,5 +26,6 @@ func ParseArgs(args []string) (RunOptions, error) {
 	return RunOptions{
 		inputFile:  *inputFile,
 		outputFile: *outputFile,
+		model:      *model,
 	}, nil
 }
