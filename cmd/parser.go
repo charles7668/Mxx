@@ -6,7 +6,7 @@ import (
 )
 
 func ParseArgs(args []string) (RunOptions, error) {
-	fs := flag.NewFlagSet("cmd", flag.PanicOnError)
+	fs := flag.NewFlagSet("cmd", flag.ContinueOnError)
 	inputFile := fs.String("i", "", "Path to the input file")
 	fs.StringVar(inputFile, "input", "", "Path to the input file (alias for -i)")
 	outputFile := fs.String("o", "", "Path to the output file")
