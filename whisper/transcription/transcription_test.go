@@ -45,7 +45,7 @@ func TestTranscription(t *testing.T) {
 	transcribeOptions.ProgressCallback = transcribeProgressCallback
 	transcribeOptions.SegmentCallback = segmentCallback
 	transcribeCtx, cancelTranscribe := context.WithCancel(ctx)
-	testWavFilePath := filepath.Join(testDir, "jfk.wav")
+	testWavFilePath := filepath.Join(testDir, "test_whisper.wav")
 	testModelFilePath := filepath.Join(testDir, "tiny.en.bin")
 	go func() {
 		err = Transcribe(transcribeCtx, testWavFilePath, testModelFilePath, transcribeOptions)

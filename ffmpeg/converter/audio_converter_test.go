@@ -11,7 +11,7 @@ func TestAudioConverter_Convert(t *testing.T) {
 	if !findEnv {
 		t.Fatalf("Please set the FFMPEG_TEST_DIR environment variable to the test directory")
 	}
-	inputFile := filepath.Join(testDir, "test.mp4")
+	inputFile := filepath.Join(testDir, "test_ffmpeg.mp4")
 
 	if _, err := os.Stat(inputFile); os.IsNotExist(err) {
 		t.Fatalf("Input file does not exist: %s", inputFile)
