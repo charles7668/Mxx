@@ -4,4 +4,5 @@ type RunOptions struct {
 	inputFile  string
 	outputFile string
 	model      string
+	webMode    bool
 }

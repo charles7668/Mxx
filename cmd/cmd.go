@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"Mxx/api"
 	"Mxx/ffmpeg/converter"
 	"Mxx/whisper/downloder"
 	"Mxx/whisper/transcription"
@@ -14,6 +15,14 @@ import (
 )
 
 func Run(options RunOptions) error {
+	if options.webMode {
+		router := api.GetApiRouter()
+		err := router.Run(":8080")
+		if err != nil {
+			return fmt.Errorf("failed to start web server: %v", err)
+		}
+		return nil
+	}
 	tempUUID, err := uuid.NewUUID()
 	if err != nil {
 		return fmt.Errorf("failed to generate uuid for create temp path : %v", err)
