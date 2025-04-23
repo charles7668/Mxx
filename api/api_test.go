@@ -1,6 +1,7 @@
 package api
 
 import (
+	"Mxx/api/media"
 	"Mxx/api/session"
 	"bytes"
 	"mime/multipart"
@@ -91,5 +92,47 @@ func TestUploadRoute(t *testing.T) {
 	targetPath := filepath.Join(sessionId, fileName)
 	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
 		t.Fatalf("Uploaded file does not exist: %v", err)
+	}
+}
+
+func TestGetSubtitlesRoute(t *testing.T) {
+	router := GetApiRouter()
+
+	// Simulate a GET request to /subtitles without a session ID
+	req, _ := http.NewRequest("GET", "/medias/subtitles", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Assert the response
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("Expected status code 401, got %d", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "Session ID is required") {
+		t.Fatalf("Response body does not contain the expected error message")
+	}
+
+	// Simulate a GET request to /subtitles with media not uploaded
+	sessionId := session.GenerateSessionId()
+	session.AddToManager(sessionId, time.Now())
+	req, _ = http.NewRequest("GET", "/medias/subtitles", nil)
+	req.Header.Set("X-Session-Id", sessionId)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Assert the response
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("Expected status code 404, got %d", w.Code)
+	}
+
+	// Add a media path to the manager
+	manager := media.GetMediaManager()
+	manager.AddMediaPath(sessionId, "test")
+	req, _ = http.NewRequest("GET", "/medias/subtitles", nil)
+	req.Header.Set("X-Session-Id", sessionId)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status code 200, got %d", w.Code)
 	}
 }

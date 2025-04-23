@@ -1,6 +1,7 @@
 package api
 
 import (
+	"Mxx/api/media"
 	"Mxx/api/session"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -25,6 +26,8 @@ func GetApiRouter() *gin.Engine {
 				return
 			}
 			if !session.IsAlive(sessionId) {
+				mediaManager := media.GetMediaManager()
+				mediaManager.RemoveMediaPath(sessionId)
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "Session ID is expired"})
 				return
 			}
@@ -52,6 +55,22 @@ func GetApiRouter() *gin.Engine {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
 				return
 			}
+			mediaManager := media.GetMediaManager()
+			mediaManager.AddMediaPath(sessionId, targetPath)
+		})
+		medias.GET("/subtitles", func(c *gin.Context) {
+			sessionId := c.GetHeader("X-Session-Id")
+			if sessionId == "" {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Session ID is required"})
+				return
+			}
+			mediaManager := media.GetMediaManager()
+			mediaPath := mediaManager.GetMediaPath(sessionId)
+			if mediaPath == "" {
+				c.JSON(http.StatusNotFound, gin.H{"error": "No media file found"})
+				return
+			}
+			// todo : generate subtitles
 		})
 	}
 	return router
