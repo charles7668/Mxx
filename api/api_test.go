@@ -34,7 +34,7 @@ func TestUploadRoute(t *testing.T) {
 	router := GetApiRouter()
 
 	// Simulate a POST request to /upload without a session ID
-	req, _ := http.NewRequest("POST", "/upload", nil)
+	req, _ := http.NewRequest("POST", "/medias", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -49,7 +49,7 @@ func TestUploadRoute(t *testing.T) {
 	// Simulate a POST request to /upload with an expired session ID
 	sessionId := session.GenerateSessionId()
 	session.AddToManager(sessionId, time.Now())
-	req, _ = http.NewRequest("POST", "/upload", nil)
+	req, _ = http.NewRequest("POST", "/medias", nil)
 	req.Header.Set("X-Session-Id", sessionId)
 	// remove dir after test
 	defer os.RemoveAll(sessionId)
@@ -76,7 +76,7 @@ func TestUploadRoute(t *testing.T) {
 
 	_ = writer.Close()
 
-	req, _ = http.NewRequest("POST", "/upload", &buf)
+	req, _ = http.NewRequest("POST", "/medias", &buf)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("X-Session-Id", sessionId)
 	w = httptest.NewRecorder()
