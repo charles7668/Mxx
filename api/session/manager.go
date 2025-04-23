@@ -15,6 +15,9 @@ func AddToManager(sessionId string, timestamp time.Time) {
 	sessionMap[sessionId] = timestamp
 }
 
+// os.RemoveAll function , extract here for cover os.RemoveAll fail case
+var osRemoveAll = os.RemoveAll
+
 func IsAlive(sessionId string) bool {
 	_, ok := sessionMap[sessionId]
 	if !ok {
@@ -23,9 +26,9 @@ func IsAlive(sessionId string) bool {
 	// check if the session is alive
 	if time.Since(sessionMap[sessionId]) > sessionAliveTime {
 		delete(sessionMap, sessionId)
-		err := os.RemoveAll(sessionId)
+		err := osRemoveAll(sessionId)
 		if err != nil {
-			fmt.Printf("failed to remove directory for session : %s , err : %s ", sessionId, err.Error())
+			fmt.Printf("failed to remove directory for session : %s , err : %s \n", sessionId, err.Error())
 		}
 		return false
 	}
