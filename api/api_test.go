@@ -47,8 +47,20 @@ func TestUploadRoute(t *testing.T) {
 		t.Fatalf("Response body does not contain the expected error message")
 	}
 
-	// Simulate a POST request to /upload with an expired session ID
+	// simulate with expired session
 	sessionId := session.GenerateSessionId()
+	session.AddToManager(sessionId, time.Now().Add(-time.Hour))
+	req, _ = http.NewRequest("POST", "/medias", nil)
+	req.Header.Set("X-Session-Id", sessionId)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("Expected status code 401, got %d", w.Code)
+	}
+
+	// Simulate a POST request to /upload with not contains file
+	sessionId = session.GenerateSessionId()
 	session.AddToManager(sessionId, time.Now())
 	req, _ = http.NewRequest("POST", "/medias", nil)
 	req.Header.Set("X-Session-Id", sessionId)

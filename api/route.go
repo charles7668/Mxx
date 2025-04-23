@@ -19,7 +19,8 @@ func GetApiRouter() *gin.Engine {
 	})
 	medias := router.Group("/medias")
 	{
-		medias.POST("", func(c *gin.Context) {
+		// session check middleware
+		medias.Use(func(c *gin.Context) {
 			sessionId := c.GetHeader("X-Session-Id")
 			if sessionId == "" {
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "Session ID is required"})
@@ -31,6 +32,9 @@ func GetApiRouter() *gin.Engine {
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "Session ID is expired"})
 				return
 			}
+		})
+		medias.POST("", func(c *gin.Context) {
+			sessionId := c.GetHeader("X-Session-Id")
 			// create session dir if not exist
 			if stat, err := os.Stat(sessionId); os.IsNotExist(err) {
 				err = os.MkdirAll(sessionId, os.ModePerm)
@@ -60,10 +64,6 @@ func GetApiRouter() *gin.Engine {
 		})
 		medias.GET("/subtitles", func(c *gin.Context) {
 			sessionId := c.GetHeader("X-Session-Id")
-			if sessionId == "" {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Session ID is required"})
-				return
-			}
 			mediaManager := media.GetMediaManager()
 			mediaPath := mediaManager.GetMediaPath(sessionId)
 			if mediaPath == "" {
