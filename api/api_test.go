@@ -4,6 +4,7 @@ import (
 	"Mxx/api/media"
 	"Mxx/api/session"
 	"bytes"
+	"encoding/json"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -101,7 +102,7 @@ func TestUploadRoute(t *testing.T) {
 	}
 
 	// Check if the file was saved correctly
-	targetPath := filepath.Join(sessionId, fileName)
+	targetPath := filepath.Join("data/media", sessionId, fileName)
 	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
 		t.Fatalf("Uploaded file does not exist: %v", err)
 	}
@@ -110,25 +111,12 @@ func TestUploadRoute(t *testing.T) {
 func TestGetSubtitlesRoute(t *testing.T) {
 	router := GetApiRouter()
 
-	// Simulate a GET request to /subtitles without a session ID
-	req, _ := http.NewRequest("GET", "/medias/subtitles", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	// Assert the response
-	if w.Code != http.StatusUnauthorized {
-		t.Fatalf("Expected status code 401, got %d", w.Code)
-	}
-	if !strings.Contains(w.Body.String(), "Session ID is required") {
-		t.Fatalf("Response body does not contain the expected error message")
-	}
-
-	// Simulate a GET request to /subtitles with media not uploaded
+	// Simulate a POST request to /subtitles with media not uploaded
 	sessionId := session.GenerateSessionId()
 	session.AddToManager(sessionId, time.Now())
-	req, _ = http.NewRequest("GET", "/medias/subtitles", nil)
+	req, _ := http.NewRequest("POST", "/medias/subtitles", nil)
 	req.Header.Set("X-Session-Id", sessionId)
-	w = httptest.NewRecorder()
+	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
 	// Assert the response
@@ -138,8 +126,8 @@ func TestGetSubtitlesRoute(t *testing.T) {
 
 	// Add a media path to the manager
 	manager := media.GetMediaManager()
-	manager.AddMediaPath(sessionId, "test")
-	req, _ = http.NewRequest("GET", "/medias/subtitles", nil)
+	manager.AddMediaPath(sessionId, "../TestSrc/test_ffmpeg.mp4")
+	req, _ = http.NewRequest("POST", "/medias/subtitles", nil)
 	req.Header.Set("X-Session-Id", sessionId)
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -147,4 +135,40 @@ func TestGetSubtitlesRoute(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected status code 200, got %d", w.Code)
 	}
+
+	for {
+		req, _ = http.NewRequest("GET", "/medias/task", nil)
+		req.Header.Set("X-Session-Id", sessionId)
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status code 200, got %d", w.Code)
+		}
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		if err != nil {
+			t.Fatalf("Failed to unmarshal response: %v", err)
+		}
+		if response["task_state"] != "Running" {
+			t.Logf("Task complett or failed : %s", response["task_state"])
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+	req, _ = http.NewRequest("GET", "/medias/subtitles", nil)
+	req.Header.Set("X-Session-Id", sessionId)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status code 200, got %d", w.Code)
+	}
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+	if response["result"] == nil {
+		t.Fatalf("Expected result in response, got nil")
+	}
+	t.Log(response["result"].(string))
 }

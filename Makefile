@@ -16,4 +16,6 @@ clean:
 	go clean
 
 test:
-	go test ./... -v
+	go test -v ./...
+	rm -rf $(CURDIR)/api/data/temp
+	rm -rf $(CURDIR)/api/data/media
