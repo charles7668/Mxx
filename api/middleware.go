@@ -11,12 +11,14 @@ func sessionCheckMiddleware(c *gin.Context) {
 	sessionId := c.GetHeader("X-Session-Id")
 	if sessionId == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Session ID is required"})
+		c.Abort()
 		return
 	}
 	if !session.IsAlive(sessionId) {
 		mediaManager := media.GetMediaManager()
 		mediaManager.RemoveMediaPath(sessionId)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Session ID is expired"})
+		c.Abort()
 		return
 	}
 }
