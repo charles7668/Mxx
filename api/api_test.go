@@ -66,7 +66,12 @@ func TestUploadRoute(t *testing.T) {
 	req, _ = http.NewRequest("POST", "/medias", nil)
 	req.Header.Set("X-Session-Id", sessionId)
 	// remove dir after test
-	defer os.RemoveAll(sessionId)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Failed to remove media directory: %s", err)
+		}
+	}(sessionId)
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 

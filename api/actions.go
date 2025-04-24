@@ -137,7 +137,12 @@ func generateMediaSubtitles(c *gin.Context) {
 			task.FailedTask(sessionId, err)
 			return
 		}
-		defer stream.Close()
+		defer func(stream *os.File) {
+			err := stream.Close()
+			if err != nil {
+				fmt.Println("failed to close file: ", err)
+			}
+		}(stream)
 
 		var whisperErr error = nil
 		whisperContext, whisperCancelFunc := context.WithCancel(graceful.BackgroundContext)
@@ -197,7 +202,12 @@ func getSubtitle(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open subtitle file"})
 		return
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			fmt.Println("failed to close file: ", err)
+		}
+	}(file)
 	content, err := os.ReadFile(subTitleFile)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read subtitle file"})
