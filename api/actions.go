@@ -87,15 +87,17 @@ func generateMediaSubtitles(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "No media file found"})
 		return
 	}
-	if state, found := task.GetTaskState(sessionId); found {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Other task is running Task : " + state.Task})
+	if state, found := task.GetTaskState(sessionId); found && state.Status == task.Running {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"is_running": true,
+			"error":      "Other task is running Task : " + state.Task,
+		})
 		return
 	}
 	task.StartTask(sessionId, task.State{
 		Task: "generating subtitles",
 	})
 	go func() {
-		defer task.CompleteTask(sessionId)
 		task.StartTask(sessionId, task.State{
 			Task: "downloading model",
 		})

@@ -29,7 +29,9 @@ func FailedTask(taskId string, error error) {
 	if state.CancelFunc != nil {
 		state.CancelFunc()
 	}
-	state.Task = error.Error()
+	if error != nil {
+		state.Task = error.Error()
+	}
 	state.Status = Failed
 	failedTask.Set(taskId, state, cache.NoExpiration)
 	taskState.Delete(taskId)
