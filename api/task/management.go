@@ -11,7 +11,7 @@ var failedTask = cache.New(cache.NoExpiration, cache.NoExpiration)
 var mutex sync.Mutex
 
 func StartTask(taskId string, state State) {
-	state.RunningStatus = Running
+	state.Status = Running
 	taskState.Set(taskId, state, cache.NoExpiration)
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -29,8 +29,8 @@ func FailedTask(taskId string, error error) {
 	if state.CancelFunc != nil {
 		state.CancelFunc()
 	}
-	state.State = error.Error()
-	state.RunningStatus = Failed
+	state.Task = error.Error()
+	state.Status = Failed
 	failedTask.Set(taskId, state, cache.NoExpiration)
 	taskState.Delete(taskId)
 }
@@ -45,7 +45,7 @@ func CompleteTask(taskId string) {
 	if state.CancelFunc != nil {
 		state.CancelFunc()
 	}
-	state.RunningStatus = Completed
+	state.Status = Completed
 	completeTask.Set(taskId, state, cache.NoExpiration)
 	taskState.Delete(taskId)
 }

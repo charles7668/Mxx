@@ -2,14 +2,29 @@ package task
 
 import "context"
 
+type RunningStatus int
+
 const (
-	Running = iota
+	Running RunningStatus = iota
 	Completed
 	Failed
 )
 
 type State struct {
-	RunningStatus int
-	State         string
-	CancelFunc    context.CancelFunc
+	Status     RunningStatus
+	Task       string
+	CancelFunc context.CancelFunc
+}
+
+func (s *State) String() string {
+	switch s.Status {
+	case Running:
+		return "Running"
+	case Completed:
+		return "Completed"
+	case Failed:
+		return "Failed"
+	default:
+		return "Completed"
+	}
 }

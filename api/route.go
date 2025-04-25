@@ -22,6 +22,7 @@ func GetApiRouter() *gin.Engine {
 		// session check middleware
 		medias.Use(sessionCheckMiddleware)
 		medias.POST("", mediaUpload)
+		medias.GET("", getUploadedMedia)
 		medias.POST("/subtitles", generateMediaSubtitles)
 		medias.GET("/subtitles", getSubtitle)
 		medias.GET("/task", getMediaTaskState)

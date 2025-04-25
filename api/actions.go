@@ -66,6 +66,19 @@ func mediaUpload(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully", "file_path": targetPath})
 }
 
+func getUploadedMedia(c *gin.Context) {
+	sessionId := c.GetHeader("X-Session-Id")
+	mediaManager := media.GetMediaManager()
+	mediaPath := mediaManager.GetMediaPath(sessionId)
+	if mediaPath == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No media file found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"file_name": filepath.Base(mediaPath),
+	})
+}
+
 func generateMediaSubtitles(c *gin.Context) {
 	sessionId := c.GetHeader("X-Session-Id")
 	mediaManager := media.GetMediaManager()

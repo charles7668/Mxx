@@ -1,12 +1,17 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./App.css";
-import { GetMediaTaskStatusAsync, UploadMediaAsync } from "./api/api.ts";
+import {
+  GetMediaTaskStatusAsync,
+  GetUploadedMediaAsync,
+  UploadMediaAsync,
+} from "./api/api.ts";
 import { RenewSessionIdAsync } from "./session/session.ts";
 
 function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [taskStatus, setTaskStatus] = useState<string>("fetching");
+  const [uploadedMedia, setUploadedMedia] = useState<string | null>("");
 
   const renewTaskStatus = () => {
     setTaskStatus("fetching");
@@ -48,7 +53,22 @@ function App() {
         return;
       }
       alert("Uploaded");
+      // refresh the uploaded media
+      setUploadedMedia(null);
     });
+  };
+
+  const getUploadedMedia: () => Promise<string> = async () => {
+    const response = await GetUploadedMediaAsync();
+    if (response === null || response.status !== 200) {
+      console.error("failed to get uploaded media: ", response?.status);
+      return "";
+    }
+    const data = await response.json();
+    if ("file_name" in data) {
+      return data.file_name as string;
+    }
+    return "";
   };
 
   useEffect(() => {
@@ -62,7 +82,6 @@ function App() {
         return "Connection Failed";
       }
       const data = await response.json();
-      console.log(data);
       if ("status" in data && data.status === "Running") {
         return data.task;
       }
@@ -87,6 +106,10 @@ function App() {
     return;
   }, [taskStatus]);
 
+  useEffect(() => {
+    getUploadedMedia().then((response) => setUploadedMedia(response));
+  }, [uploadedMedia]);
+
   return (
     <>
       <div
@@ -98,6 +121,11 @@ function App() {
           flexDirection: "column",
         }}
       >
+        <div
+          style={{ marginBottom: "20px", fontSize: "18px", fontWeight: "bold" }}
+        >
+          Uploaded Media: {uploadedMedia}
+        </div>
         <div
           style={{ marginBottom: "20px", fontSize: "18px", fontWeight: "bold" }}
         >
