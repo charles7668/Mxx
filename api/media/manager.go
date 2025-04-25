@@ -1,13 +1,35 @@
 package media
 
+import (
+	"Mxx/api/configs"
+	"fmt"
+	"os"
+	"strings"
+)
+
 type Manager struct {
 	mediaRecords map[string]string
 }
 
 var mediaManager *Manager
 
-// AddMediaPath Add media path to the map for management
-func (m *Manager) AddMediaPath(sessionId, path string) {
+// SetMediaPath Set a media path to the map for management
+func (m *Manager) SetMediaPath(sessionId, path string) {
+	// try to remove old media in filesystem
+	if oldPath, ok := m.mediaRecords[sessionId]; ok {
+		// check if the old path starts with a media store path, if not then prevent deleting file
+		apiConfig := configs.GetApiConfig()
+		if strings.HasPrefix(oldPath, apiConfig.MediaStorePath) {
+			go func() {
+				err := os.Remove(oldPath)
+				if err != nil {
+					err = fmt.Errorf("failed to remove old media file: %s, err: %s", oldPath, err)
+					fmt.Println(err)
+				}
+			}()
+		}
+	}
+	// add a new media path to the map
 	m.mediaRecords[sessionId] = path
 }
 

@@ -131,7 +131,7 @@ func TestGetSubtitlesRoute(t *testing.T) {
 
 	// Add a media path to the manager
 	manager := media.GetMediaManager()
-	manager.AddMediaPath(sessionId, "../TestSrc/test_ffmpeg.mp4")
+	manager.SetMediaPath(sessionId, "../TestSrc/test_ffmpeg.mp4")
 	req, _ = http.NewRequest("POST", "/medias/subtitles", nil)
 	req.Header.Set("X-Session-Id", sessionId)
 	w = httptest.NewRecorder()

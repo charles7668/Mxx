@@ -62,7 +62,7 @@ func mediaUpload(c *gin.Context) {
 		return
 	}
 	mediaManager := media.GetMediaManager()
-	mediaManager.AddMediaPath(sessionId, targetPath)
+	mediaManager.SetMediaPath(sessionId, targetPath)
 	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully", "file_path": targetPath})
 }
 
