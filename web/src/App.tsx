@@ -8,6 +8,7 @@ import {
   UploadMediaAsync,
 } from "./api/api.ts";
 import { RenewSessionIdAsync } from "./session/session.ts";
+import { Box, Button, VStack, Text, Input } from "@chakra-ui/react";
 
 function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -155,98 +156,55 @@ function App() {
   }, [uploadedMedia]);
 
   return (
-    <>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          flexDirection: "column",
-        }}
-      >
-        <div
-          style={{ marginBottom: "20px", fontSize: "18px", fontWeight: "bold" }}
-        >
+    <Box
+      height="100vh"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      flexDirection="column"
+    >
+      <VStack spacing={4} textAlign="center">
+        <Text fontSize="lg" fontWeight="bold">
           Uploaded Media: {uploadedMedia}
-        </div>
-        <div
-          style={{ marginBottom: "20px", fontSize: "18px", fontWeight: "bold" }}
-        >
+        </Text>
+
+        <Text fontSize="lg" fontWeight="bold">
           Task Status: {taskStatus}
-        </div>
-        <form onSubmit={handleSubmit} style={{ textAlign: "center" }}>
-          <input
+        </Text>
+
+        <form onSubmit={handleSubmit}>
+          <Input
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            style={{ display: "none" }}
+            display="none"
           />
 
-          <button
+          <Button
             type="button"
+            colorScheme="green"
             onClick={handleUploadClick}
-            style={{
-              padding: "10px 20px",
-              fontSize: "16px",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              marginBottom: "10px",
-            }}
+            mb={2}
           >
             Select file
-          </button>
+          </Button>
 
-          {selectedFile && (
-            <div style={{ marginBottom: "10px" }}>{selectedFile.name}</div>
-          )}
+          {selectedFile && <Text mb={2}>{selectedFile.name}</Text>}
 
-          <button
-            type="submit"
-            style={{
-              padding: "10px 20px",
-              fontSize: "16px",
-              backgroundColor: "#2196F3",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
+          <Button type="submit" colorScheme="blue" mb={2}>
             Upload file
-          </button>
+          </Button>
         </form>
-        <button
-          onClick={handleGenerateSubtitleClick}
-          type="button"
-          style={{
-            padding: "10px 20px",
-            fontSize: "16px",
-            backgroundColor: "#2196F3",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
-        >
-          Generate Subtitle
-        </button>
 
-        <div
-          style={{
-            marginBottom: "20px",
-            fontSize: "18px",
-            fontWeight: "bold",
-            whiteSpace: "pre-wrap",
-          }}
-        >
+        <Button onClick={handleGenerateSubtitleClick} colorScheme="blue">
+          Generate Subtitle
+        </Button>
+
+        <Text fontSize="lg" fontWeight="bold" whiteSpace="pre-wrap">
           {subtitle || "No subtitle generated yet."}
-        </div>
-      </div>
-    </>
+        </Text>
+      </VStack>
+    </Box>
   );
 }
 
