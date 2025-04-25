@@ -173,15 +173,19 @@ func generateMediaSubtitles(c *gin.Context) {
 
 func getMediaTaskState(c *gin.Context) {
 	sessionId := c.GetHeader("X-Session-Id")
-	statusMsg := "Task is running"
-	state, _ := task.GetTaskState(sessionId)
-	switch state.RunningStatus {
-	case task.Running:
-		statusMsg = "Running"
-	case task.Failed:
-		statusMsg = "Failed"
-	case task.Completed:
-		statusMsg = "Completed"
+	statusMsg := "Completed"
+	state, found := task.GetTaskState(sessionId)
+	if found {
+		switch state.RunningStatus {
+		case task.Running:
+			statusMsg = "Running"
+		case task.Failed:
+			statusMsg = "Failed"
+		case task.Completed:
+			statusMsg = "Completed"
+		}
+	} else {
+		state.RunningStatus = task.Completed
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"task_state_string": state.State,
