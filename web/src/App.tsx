@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect } from "react";
 import "./App.css";
 import {
   GetMediaTaskStatusAsync,
+  GetSubtitleAsync,
   GetUploadedMediaAsync,
+  StartGenerateSubtitleTaskAsync,
   UploadMediaAsync,
 } from "./api/api.ts";
 import { RenewSessionIdAsync } from "./session/session.ts";
@@ -12,6 +14,8 @@ function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [taskStatus, setTaskStatus] = useState<string>("fetching");
   const [uploadedMedia, setUploadedMedia] = useState<string | null>("");
+  const [waitingSubtitle, setWaitingSubtitle] = useState<boolean>(false);
+  const [subtitle, setSubtitle] = useState<string | null>(null);
 
   const renewTaskStatus = () => {
     setTaskStatus("fetching");
@@ -58,6 +62,41 @@ function App() {
     });
   };
 
+  const handleGenerateSubtitleClick = async () => {
+    const response = await StartGenerateSubtitleTaskAsync();
+    if (response === null || response.status !== 200) {
+      if (response !== null) {
+        const data = await response.json();
+        if ("is_running" in data) {
+          alert("Another task is running, please wait.");
+        } else {
+          alert("Error: " + data.error);
+        }
+        return;
+      }
+      alert(`Failed to start generating Subtitle`);
+      return;
+    }
+    setWaitingSubtitle(true);
+    renewTaskStatus();
+  };
+
+  const getSubtitle = async () => {
+    const response = await GetSubtitleAsync();
+    if (response === null || response.status !== 200) {
+      let data = null;
+      if (response) {
+        data = await response.json();
+      }
+      alert(`Failed to get subtitle: ${data?.error}`);
+      return;
+    }
+    const data = await response.json();
+    if ("result" in data) {
+      setSubtitle(data.result);
+    }
+  };
+
   const getUploadedMedia: () => Promise<string> = async () => {
     const response = await GetUploadedMediaAsync();
     if (response === null || response.status !== 200) {
@@ -71,22 +110,23 @@ function App() {
     return "";
   };
 
+  const getStatusAsync = async () => {
+    const response = await GetMediaTaskStatusAsync();
+    if (response === null || response.status !== 200) {
+      console.error("failed to get task status : ", response?.status);
+      return "Connection Failed";
+    }
+    const data = await response.json();
+    if ("status" in data && data.status === "Running") {
+      return data.task;
+    }
+    return "Idle";
+  };
+
   useEffect(() => {
     let tryCount = 0;
     const maxTryCount = 2;
     if (taskStatus !== "fetching") return;
-    const getStatusAsync = async () => {
-      const response = await GetMediaTaskStatusAsync();
-      if (response === null || response.status !== 200) {
-        console.error("failed to get task status : ", response?.status);
-        return "Connection Failed";
-      }
-      const data = await response.json();
-      if ("status" in data && data.status === "Running") {
-        return data.task;
-      }
-      return "Idle";
-    };
 
     // set interval to check task status every 1 seconds
     const intervalId = setInterval(async () => {
@@ -95,6 +135,10 @@ function App() {
         setTaskStatus(state);
         tryCount++;
         if (tryCount >= maxTryCount) {
+          if (waitingSubtitle) {
+            await getSubtitle();
+            setWaitingSubtitle(false);
+          }
           clearInterval(intervalId);
         }
         return;
@@ -104,7 +148,7 @@ function App() {
     }, 1000);
 
     return;
-  }, [taskStatus]);
+  }, [taskStatus, waitingSubtitle]);
 
   useEffect(() => {
     getUploadedMedia().then((response) => setUploadedMedia(response));
@@ -175,6 +219,32 @@ function App() {
             Upload file
           </button>
         </form>
+        <button
+          onClick={handleGenerateSubtitleClick}
+          type="button"
+          style={{
+            padding: "10px 20px",
+            fontSize: "16px",
+            backgroundColor: "#2196F3",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          Generate Subtitle
+        </button>
+
+        <div
+          style={{
+            marginBottom: "20px",
+            fontSize: "18px",
+            fontWeight: "bold",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {subtitle || "No subtitle generated yet."}
+        </div>
       </div>
     </>
   );

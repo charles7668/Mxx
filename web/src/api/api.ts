@@ -94,9 +94,33 @@ async function GetUploadedMediaAsync() {
   }
 }
 
+async function StartGenerateSubtitleTaskAsync() {
+  try {
+    return await fetchWithAuth(`${API_URL}/medias/subtitles`, {
+      method: "POST",
+    });
+  } catch (err) {
+    console.error("Error starting subtitle task:", err);
+    return null;
+  }
+}
+
+async function GetSubtitleAsync() {
+  try {
+    return await fetchWithAuth(`${API_URL}/medias/subtitles`, {
+      method: "GET",
+    });
+  } catch (err) {
+    console.error("Error fetching subtitle:", err);
+    return null;
+  }
+}
+
 export {
   GetSessionIdAsync,
   UploadMediaAsync,
   GetMediaTaskStatusAsync,
   GetUploadedMediaAsync,
+  StartGenerateSubtitleTaskAsync,
+  GetSubtitleAsync,
 };
