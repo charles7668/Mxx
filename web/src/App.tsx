@@ -52,6 +52,8 @@ function App() {
   };
 
   useEffect(() => {
+    let tryCount = 0;
+    const maxTryCount = 2;
     if (taskStatus !== "fetching") return;
     const getStatusAsync = async () => {
       const response = await GetMediaTaskStatusAsync();
@@ -60,18 +62,25 @@ function App() {
         return "Connection Failed";
       }
       const data = await response.json();
-      if ("task_state" in data && data.task_state === "Running") {
-        return data.task_state_string;
+      console.log(data);
+      if ("status" in data && data.status === "Running") {
+        return data.task;
       }
       return "Idle";
     };
-    // set interval to check task status every 5 seconds
+
+    // set interval to check task status every 1 seconds
     const intervalId = setInterval(async () => {
       const state = await getStatusAsync();
       if (state === "Idle" || state === "Connection Failed") {
         setTaskStatus(state);
-        clearInterval(intervalId);
+        tryCount++;
+        if (tryCount >= maxTryCount) {
+          clearInterval(intervalId);
+        }
+        return;
       }
+      tryCount = 0;
       setTaskStatus(state);
     }, 1000);
 

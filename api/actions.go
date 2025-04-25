@@ -40,13 +40,13 @@ func mediaUpload(c *gin.Context) {
 		return
 	}
 
-	if state, found := task.GetTaskState(sessionId); found && state.RunningStatus == task.Running {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Other task is running Task : " + state.State})
+	if state, found := task.GetTaskState(sessionId); found && state.Status == task.Running {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Other task is running Task : " + state.Task})
 		return
 	}
 
 	task.StartTask(sessionId, task.State{
-		State: "uploading files",
+		Task: "uploading files",
 	})
 	defer task.CompleteTask(sessionId)
 
@@ -75,16 +75,16 @@ func generateMediaSubtitles(c *gin.Context) {
 		return
 	}
 	if state, found := task.GetTaskState(sessionId); found {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Other task is running Task : " + state.State})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Other task is running Task : " + state.Task})
 		return
 	}
 	task.StartTask(sessionId, task.State{
-		State: "generating subtitles",
+		Task: "generating subtitles",
 	})
 	go func() {
 		defer task.CompleteTask(sessionId)
 		task.StartTask(sessionId, task.State{
-			State: "downloading model",
+			Task: "downloading model",
 		})
 		apiConfig := configs.GetApiConfig()
 		modelPath := apiConfig.ModelStorePath
@@ -110,7 +110,7 @@ func generateMediaSubtitles(c *gin.Context) {
 			return
 		}
 		task.StartTask(sessionId, task.State{
-			State: "start convert file to wav",
+			Task: "start convert file to wav",
 		})
 		audioConverter := converter.CreateAudioConverter("ffmpeg")
 		mediaManager = media.GetMediaManager()
@@ -129,7 +129,7 @@ func generateMediaSubtitles(c *gin.Context) {
 			return
 		}
 		task.StartTask(sessionId, task.State{
-			State: "start generate subtitles",
+			Task: "start generate subtitles",
 		})
 		// write subtitles to file
 		subtitleFile := filepath.Join(tempUUID, "output.txt")
@@ -174,23 +174,14 @@ func generateMediaSubtitles(c *gin.Context) {
 
 func getMediaTaskState(c *gin.Context) {
 	sessionId := c.GetHeader("X-Session-Id")
-	statusMsg := "Completed"
 	state, found := task.GetTaskState(sessionId)
-	if found {
-		switch state.RunningStatus {
-		case task.Running:
-			statusMsg = "Running"
-		case task.Failed:
-			statusMsg = "Failed"
-		case task.Completed:
-			statusMsg = "Completed"
-		}
-	} else {
-		state.RunningStatus = task.Completed
+	if !found {
+		state.Status = task.Completed
 	}
+	status := state.String()
 	c.JSON(http.StatusOK, gin.H{
-		"task_state_string": state.State,
-		"task_state":        statusMsg,
+		"task":   state.Task,
+		"status": status,
 	})
 }
 
