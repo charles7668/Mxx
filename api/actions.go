@@ -84,10 +84,12 @@ func generateMediaSubtitles(c *gin.Context) {
 	mediaManager := media.GetMediaManager()
 	mediaPath := mediaManager.GetMediaPath(sessionId)
 	if mediaPath == "" {
+		fmt.Printf("No media file found for session ID: %s\n", sessionId)
 		c.JSON(http.StatusNotFound, gin.H{"error": "No media file found"})
 		return
 	}
 	if state, found := task.GetTaskState(sessionId); found && state.Status == task.Running {
+		fmt.Printf("Other task is running\n")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"is_running": true,
 			"error":      "Other task is running Task : " + state.Task,
@@ -98,6 +100,7 @@ func generateMediaSubtitles(c *gin.Context) {
 		Task: "generating subtitles",
 	})
 	go func() {
+		fmt.Printf("start download moedel\n")
 		task.StartTask(sessionId, task.State{
 			Task: "downloading model",
 		})
@@ -116,14 +119,17 @@ func generateMediaSubtitles(c *gin.Context) {
 			}
 		})
 		if err != nil {
+			fmt.Printf("download error: %v\n", err)
 			task.FailedTask(sessionId, downloadErr)
 			return
 		}
 		<-downloadCtx.Done()
 		if downloadErr != nil {
+			fmt.Printf("download error: %v\n", downloadErr)
 			task.FailedTask(sessionId, downloadErr)
 			return
 		}
+		fmt.Printf("start convert file to wav\n")
 		task.StartTask(sessionId, task.State{
 			Task: "start convert file to wav",
 		})
@@ -134,15 +140,18 @@ func generateMediaSubtitles(c *gin.Context) {
 		tempUUID := filepath.Join(tempDir, sessionId)
 		err = os.MkdirAll(tempUUID, os.ModePerm)
 		if err != nil {
+			fmt.Printf("failed to create temp dir: %s, err: %s\n", tempUUID, err)
 			task.FailedTask(sessionId, err)
 			return
 		}
 		audioTarget := filepath.Join(tempUUID, "output.wav")
 		err = audioConverter.Convert(inputFilePath, audioTarget)
 		if err != nil {
+			fmt.Printf("failed to convert file: %s, err: %s\n", inputFilePath, err)
 			task.FailedTask(sessionId, err)
 			return
 		}
+		fmt.Printf("start generate subtitles\n")
 		task.StartTask(sessionId, task.State{
 			Task: "start generate subtitles",
 		})
@@ -150,6 +159,7 @@ func generateMediaSubtitles(c *gin.Context) {
 		subtitleFile := filepath.Join(tempUUID, "output.txt")
 		stream, err := os.Create(subtitleFile)
 		if err != nil {
+			fmt.Printf("failed to create file: %s, err: %s\n", subtitleFile, err)
 			task.FailedTask(sessionId, err)
 			return
 		}
@@ -167,6 +177,7 @@ func generateMediaSubtitles(c *gin.Context) {
 			writeString := fmt.Sprintf("[%6s -> %6s] %s", segment.Start.Truncate(time.Millisecond), segment.End.Truncate(time.Millisecond), segment.Text)
 			_, writeErr := stream.WriteString(writeString + "\n")
 			if writeErr != nil {
+				fmt.Printf("failed to write file: %s, err: %s\n", subtitleFile, writeErr)
 				whisperCancelFunc()
 				whisperErr = writeErr
 			}
@@ -174,14 +185,17 @@ func generateMediaSubtitles(c *gin.Context) {
 		err = transcription.Transcribe(whisperContext, audioTarget, filepath.Join(modelPath, "tiny"), whisperOptions)
 		if err != nil {
 			whisperCancelFunc()
+			fmt.Printf("failed to transcribe file: %s, err: %s\n", audioTarget, err)
 			task.FailedTask(sessionId, err)
 			return
 		}
 		if whisperErr != nil {
 			whisperCancelFunc()
+			fmt.Printf("failed to transcribe file: %s, err: %s\n", audioTarget, whisperErr)
 			task.FailedTask(sessionId, whisperErr)
 			return
 		}
+		fmt.Printf("generate subtitle complete\n")
 		task.CompleteTask(sessionId)
 	}()
 	c.JSON(200, gin.H{"message": "Generate subtitles task started"})
