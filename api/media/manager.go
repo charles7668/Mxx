@@ -4,6 +4,7 @@ import (
 	"Mxx/api/configs"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -13,13 +14,32 @@ type Manager struct {
 
 var mediaManager *Manager
 
+func isSubPath(child, parent string) (bool, error) {
+	absChild, err := filepath.Abs(child)
+	if err != nil {
+		return false, err
+	}
+	absParent, err := filepath.Abs(parent)
+	if err != nil {
+		return false, err
+	}
+
+	rel, err := filepath.Rel(absParent, absChild)
+	if err != nil {
+		return false, err
+	}
+
+	return !strings.HasPrefix(rel, ".."), nil
+}
+
 // SetMediaPath Set a media path to the map for management
 func (m *Manager) SetMediaPath(sessionId, path string) {
 	// try to remove old media in filesystem
 	if oldPath, ok := m.mediaRecords[sessionId]; ok {
 		// check if the old path starts with a media store path, if not then prevent deleting file
 		apiConfig := configs.GetApiConfig()
-		if strings.HasPrefix(oldPath, apiConfig.MediaStorePath) {
+		if isSub, _ := isSubPath(oldPath, apiConfig.MediaStorePath); isSub {
+			fmt.Println("removing old media file: ", oldPath)
 			go func() {
 				err := os.Remove(oldPath)
 				if err != nil {
