@@ -120,7 +120,7 @@ func generateMediaSubtitles(c *gin.Context) {
 		})
 		if err != nil {
 			if errors.Is(err, downloader.AlreadyDownloadedErr) {
-				fmt.Printf("%s", downloader.AlreadyDownloadedErr)
+				fmt.Printf("%s\n", downloader.AlreadyDownloadedErr)
 				downloadCancel()
 			} else {
 				fmt.Printf("download error: %v\n", err)
