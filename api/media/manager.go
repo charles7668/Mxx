@@ -35,7 +35,7 @@ func isSubPath(child, parent string) (bool, error) {
 // SetMediaPath Set a media path to the map for management
 func (m *Manager) SetMediaPath(sessionId, path string) {
 	// try to remove old media in filesystem
-	if oldPath, ok := m.mediaRecords[sessionId]; ok {
+	if oldPath, ok := m.mediaRecords[sessionId]; ok && oldPath != path {
 		// check if the old path starts with a media store path, if not then prevent deleting file
 		apiConfig := configs.GetApiConfig()
 		if isSub, _ := isSubPath(oldPath, apiConfig.MediaStorePath); isSub {
