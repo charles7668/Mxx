@@ -101,7 +101,7 @@ func TestDownloadingCheck(t *testing.T) {
 					t.Logf("%d Download Progress: %.2f%%", i, progress)
 				}
 			})
-			if err != nil && !errors.Is(err, DownloadingErr) {
+			if err != nil && !errors.Is(err, AlreadyDownloadedErr) {
 				t.Errorf("%d download failed: %v", i, err)
 				cancel()
 				return

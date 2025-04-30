@@ -119,9 +119,14 @@ func generateMediaSubtitles(c *gin.Context) {
 			}
 		})
 		if err != nil {
-			fmt.Printf("download error: %v\n", err)
-			task.FailedTask(sessionId, downloadErr)
-			return
+			if errors.Is(err, downloder.AlreadyDownloadedErr) {
+				fmt.Printf("%s", downloder.AlreadyDownloadedErr)
+				downloadCancel()
+			} else {
+				fmt.Printf("download error: %v\n", err)
+				task.FailedTask(sessionId, downloadErr)
+				return
+			}
 		}
 		<-downloadCtx.Done()
 		if downloadErr != nil {

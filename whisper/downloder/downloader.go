@@ -21,9 +21,9 @@ const (
 )
 
 var (
-	DownloadingErr  = errors.New("model is already downloading")
-	downloadingTask = make(map[string]context.CancelFunc)
-	lock            sync.Mutex
+	AlreadyDownloadedErr = errors.New("model is already downloaded")
+	downloadingTask      = make(map[string]context.CancelFunc)
+	lock                 sync.Mutex
 )
 
 // getTaskQueryKey generates a unique key for the download task based on the URL and output file path(absolute path)
@@ -42,7 +42,7 @@ func Download(ctx context.Context, modelName, dir string, progress func(float32,
 	lock.Lock()
 	if _, ok := downloadingTask[taskQueryKey]; ok {
 		lock.Unlock()
-		return DownloadingErr
+		return AlreadyDownloadedErr
 	}
 
 	// create context for download
