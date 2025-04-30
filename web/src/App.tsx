@@ -8,7 +8,7 @@ import {
   UploadMediaAsync,
 } from "./api/api.ts";
 import { RenewSessionIdAsync } from "./session/session.ts";
-import { Box, Button, VStack, Text, Input } from "@chakra-ui/react";
+import { Box, Button, Text, Input } from "@chakra-ui/react";
 
 function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -156,54 +156,62 @@ function App() {
   }, [uploadedMedia]);
 
   return (
-    <Box
-      height="100vh"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      flexDirection="column"
-    >
-      <VStack spacing={4} textAlign="center">
-        <Text fontSize="lg" fontWeight="bold">
-          Uploaded Media: {uploadedMedia}
-        </Text>
+    <Box height="100vh" display="flex" flexDirection="column" maxHeight="100vh">
+      <Text fontSize="lg" fontWeight="bold" textAlign="center" mt={4}>
+        Task Status: {taskStatus}
+      </Text>
 
-        <Text fontSize="lg" fontWeight="bold">
-          Task Status: {taskStatus}
-        </Text>
+      <Box flex={1} display="flex" flexDirection="row" overflow="auto">
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="flex-start"
+          justifyContent="space-between"
+          p={4}
+          height="100%"
+        >
+          <form onSubmit={handleSubmit}>
+            <Input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              display="none"
+            />
 
-        <form onSubmit={handleSubmit}>
-          <Input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            display="none"
-          />
+            <Button
+              type="button"
+              colorScheme="green"
+              onClick={handleUploadClick}
+              mb={2}
+            >
+              Select file
+            </Button>
 
-          <Button
-            type="button"
-            colorScheme="green"
-            onClick={handleUploadClick}
-            mb={2}
-          >
-            Select file
+            {selectedFile && <Text mb={2}>{selectedFile.name}</Text>}
+
+            <Button type="submit" colorScheme="blue" mb={2}>
+              Upload file
+            </Button>
+          </form>
+
+          <Button onClick={handleGenerateSubtitleClick} colorScheme="blue">
+            Generate Subtitle
           </Button>
+        </Box>
 
-          {selectedFile && <Text mb={2}>{selectedFile.name}</Text>}
-
-          <Button type="submit" colorScheme="blue" mb={2}>
-            Upload file
-          </Button>
-        </form>
-
-        <Button onClick={handleGenerateSubtitleClick} colorScheme="blue">
-          Generate Subtitle
-        </Button>
-
-        <Text fontSize="lg" fontWeight="bold" whiteSpace="pre-wrap">
-          {subtitle || "No subtitle generated yet."}
-        </Text>
-      </VStack>
+        <Box
+          justifyContent="center"
+          alignItems="self-start"
+          height="100%"
+          maxHeight="100%"
+          overflow="auto"
+          p={4}
+        >
+          <Text fontSize="lg" fontWeight="bold" whiteSpace="pre-wrap">
+            {subtitle || "No subtitle generated yet."}
+          </Text>
+        </Box>
+      </Box>
     </Box>
   );
 }
