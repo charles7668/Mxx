@@ -1,7 +1,7 @@
 package transcription
 
 import (
-	"Mxx/whisper/downloder"
+	"Mxx/whisper/downloader"
 	"context"
 	"github.com/ggerganov/whisper.cpp/bindings/go/pkg/whisper"
 	"os"
@@ -19,7 +19,7 @@ func TestTranscription(t *testing.T) {
 	downloadCtx, cancelDownload := context.WithCancel(ctx)
 	var downloadErr error
 	downloadErr = nil
-	err := downloder.Download(downloadCtx, "tiny.en", testDir, func(progress float32, err error) {
+	err := downloader.Download(downloadCtx, "tiny.en", testDir, func(progress float32, err error) {
 		if progress >= 100 {
 			cancelDownload()
 		}

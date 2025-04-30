@@ -7,7 +7,7 @@ import (
 	"Mxx/api/session"
 	"Mxx/api/task"
 	"Mxx/ffmpeg/converter"
-	"Mxx/whisper/downloder"
+	"Mxx/whisper/downloader"
 	"Mxx/whisper/transcription"
 	"context"
 	"errors"
@@ -108,7 +108,7 @@ func generateMediaSubtitles(c *gin.Context) {
 		modelPath := apiConfig.ModelStorePath
 		downloadCtx, downloadCancel := context.WithCancel(context.Background())
 		var downloadErr error = nil
-		err := downloder.Download(downloadCtx, "tiny", modelPath, func(progress float32, err error) {
+		err := downloader.Download(downloadCtx, "tiny", modelPath, func(progress float32, err error) {
 			if err != nil {
 				downloadCancel()
 				downloadErr = err
@@ -119,8 +119,8 @@ func generateMediaSubtitles(c *gin.Context) {
 			}
 		})
 		if err != nil {
-			if errors.Is(err, downloder.AlreadyDownloadedErr) {
-				fmt.Printf("%s", downloder.AlreadyDownloadedErr)
+			if errors.Is(err, downloader.AlreadyDownloadedErr) {
+				fmt.Printf("%s", downloader.AlreadyDownloadedErr)
 				downloadCancel()
 			} else {
 				fmt.Printf("download error: %v\n", err)

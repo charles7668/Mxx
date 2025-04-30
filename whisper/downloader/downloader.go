@@ -1,4 +1,4 @@
-package downloder
+package downloader
 
 import (
 	"context"

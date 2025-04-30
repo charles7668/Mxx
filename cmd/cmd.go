@@ -3,7 +3,7 @@ package cmd
 import (
 	"Mxx/api"
 	"Mxx/ffmpeg/converter"
-	"Mxx/whisper/downloder"
+	"Mxx/whisper/downloader"
 	"Mxx/whisper/transcription"
 	"context"
 	"fmt"
@@ -53,7 +53,7 @@ func Run(options RunOptions) error {
 		}
 		ctx, cancel := context.WithCancel(backgroundCtx)
 		var downloadErr error
-		err = downloder.Download(ctx, model, cwd, func(progress float32, err error) {
+		err = downloader.Download(ctx, model, cwd, func(progress float32, err error) {
 			if err != nil {
 				downloadErr = err
 				cancel()
