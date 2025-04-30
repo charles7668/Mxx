@@ -8,12 +8,16 @@ import {
   UploadMediaAsync,
 } from "./api/api.ts";
 import { RenewSessionIdAsync } from "./session/session.ts";
-import { Box, Button, Text, Input } from "@chakra-ui/react";
+import { Box, Button, Text, Input, Spinner } from "@chakra-ui/react";
+import { TaskStatus } from "./models/task_status.ts";
 
 function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [taskStatus, setTaskStatus] = useState<string>("fetching");
+  const [taskStatus, setTaskStatus] = useState<TaskStatus>({
+    idle: true,
+    message: "Idle",
+  });
   const [needRefreshTaskStatus, setNeedRefreshTaskStatus] =
     useState<boolean>(false);
   const [uploadedMedia, setUploadedMedia] = useState<string | null>("");
@@ -50,12 +54,10 @@ function App() {
     renewTaskStatus();
     UploadMediaAsync(sessionId, formData).then(async (response) => {
       if (response.error === "Session ID is expired") {
-        setTaskStatus("Renewing session...");
         const newSession = await RenewSessionIdAsync();
         response = await UploadMediaAsync(newSession, formData);
       }
       if (response.error) {
-        setTaskStatus("Error: " + response.error);
         alert(response.error);
         return;
       }
@@ -113,17 +115,26 @@ function App() {
     return "";
   };
 
-  const getStatusAsync = async () => {
+  const getStatusAsync: () => Promise<TaskStatus> = async () => {
     const response = await GetMediaTaskStatusAsync();
     if (response === null || response.status !== 200) {
       console.error("failed to get task status : ", response?.status);
-      return "Connection Failed";
+      return {
+        idle: true,
+        message: "Connection Failed",
+      };
     }
     const data = await response.json();
     if ("status" in data && data.status === "Running") {
-      return data.task;
+      return {
+        idle: false,
+        message: data.task,
+      };
     }
-    return "Idle";
+    return {
+      idle: true,
+      message: "Idle",
+    };
   };
 
   useEffect(() => {
@@ -133,7 +144,7 @@ function App() {
       const intervalId = setInterval(async () => {
         const state = await getStatusAsync();
         setTaskStatus(state);
-        if (state === "Idle" || state === "Connection Failed") {
+        if (state.idle) {
           tryCount++;
           if (tryCount >= maxTryCount) {
             if (waitingSubtitle) {
@@ -148,8 +159,12 @@ function App() {
         tryCount = 0;
       }, 1000);
     };
+
     if (needRefreshTaskStatus) {
-      setTaskStatus("fetching task status...");
+      setTaskStatus({
+        idle: false,
+        message: "fetching task status...",
+      });
       startTaskStatusTimer();
     }
   }, [needRefreshTaskStatus, waitingSubtitle]);
@@ -160,9 +175,23 @@ function App() {
 
   return (
     <Box height="100vh" display="flex" flexDirection="column" maxHeight="100vh">
-      <Text fontSize="lg" fontWeight="bold" textAlign="center" mt={4}>
-        Task Status: {taskStatus}
-      </Text>
+      <Box
+        display="flex"
+        flexDirection="row"
+        alignItems="center"
+        justifyContent="center"
+        alignContent="center"
+        mt={4}
+      >
+        <Text fontSize="lg" fontWeight="bold" textAlign="center">
+          Task Status: {taskStatus.message}
+        </Text>
+        {!taskStatus.idle && (
+          <Box as="span" ml={2}>
+            <Spinner size="sm" />
+          </Box>
+        )}
+      </Box>
 
       <Box flex={1} display="flex" flexDirection="row" overflow="auto">
         <Box
