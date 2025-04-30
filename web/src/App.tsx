@@ -14,12 +14,14 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [taskStatus, setTaskStatus] = useState<string>("fetching");
+  const [needRefreshTaskStatus, setNeedRefreshTaskStatus] =
+    useState<boolean>(false);
   const [uploadedMedia, setUploadedMedia] = useState<string | null>("");
   const [waitingSubtitle, setWaitingSubtitle] = useState<boolean>(false);
   const [subtitle, setSubtitle] = useState<string | null>(null);
 
   const renewTaskStatus = () => {
-    setTaskStatus("fetching");
+    setNeedRefreshTaskStatus(true);
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,31 +127,32 @@ function App() {
   };
 
   useEffect(() => {
-    let tryCount = 0;
-    const maxTryCount = 2;
-    if (taskStatus !== "fetching") return;
-
-    // set interval to check task status every 1 seconds
-    const intervalId = setInterval(async () => {
-      const state = await getStatusAsync();
-      if (state === "Idle" || state === "Connection Failed") {
+    const startTaskStatusTimer = () => {
+      let tryCount = 0;
+      const maxTryCount = 2;
+      const intervalId = setInterval(async () => {
+        const state = await getStatusAsync();
         setTaskStatus(state);
-        tryCount++;
-        if (tryCount >= maxTryCount) {
-          if (waitingSubtitle) {
-            await getSubtitle();
-            setWaitingSubtitle(false);
+        if (state === "Idle" || state === "Connection Failed") {
+          tryCount++;
+          if (tryCount >= maxTryCount) {
+            if (waitingSubtitle) {
+              await getSubtitle();
+              setWaitingSubtitle(false);
+            }
+            clearInterval(intervalId);
+            setNeedRefreshTaskStatus(false);
           }
-          clearInterval(intervalId);
+          return;
         }
-        return;
-      }
-      tryCount = 0;
-      setTaskStatus(state);
-    }, 1000);
-
-    return;
-  }, [taskStatus, waitingSubtitle]);
+        tryCount = 0;
+      }, 1000);
+    };
+    if (needRefreshTaskStatus) {
+      setTaskStatus("fetching task status...");
+      startTaskStatusTimer();
+    }
+  }, [needRefreshTaskStatus, waitingSubtitle]);
 
   useEffect(() => {
     getUploadedMedia().then((response) => setUploadedMedia(response));
