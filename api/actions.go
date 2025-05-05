@@ -2,6 +2,7 @@ package api
 
 import (
 	"Mxx/api/configs"
+	"Mxx/api/constant"
 	"Mxx/api/graceful"
 	"Mxx/api/media"
 	"Mxx/api/session"
@@ -27,7 +28,8 @@ func generateSessionId(c *gin.Context) {
 }
 
 func mediaUpload(c *gin.Context) {
-	sessionId := c.GetHeader("X-Session-Id")
+	obj, _ := c.Get(constant.SessionIdCtxKey)
+	sessionId := obj.(string)
 	storeDir := filepath.Join(configs.GetApiConfig().MediaStorePath, sessionId)
 	err := os.MkdirAll(storeDir, os.ModePerm)
 	if err != nil {
@@ -67,7 +69,8 @@ func mediaUpload(c *gin.Context) {
 }
 
 func getUploadedMedia(c *gin.Context) {
-	sessionId := c.GetHeader("X-Session-Id")
+	obj, _ := c.Get(constant.SessionIdCtxKey)
+	sessionId := obj.(string)
 	mediaManager := media.GetMediaManager()
 	mediaPath := mediaManager.GetMediaPath(sessionId)
 	if mediaPath == "" {
@@ -80,7 +83,8 @@ func getUploadedMedia(c *gin.Context) {
 }
 
 func generateMediaSubtitles(c *gin.Context) {
-	sessionId := c.GetHeader("X-Session-Id")
+	obj, _ := c.Get(constant.SessionIdCtxKey)
+	sessionId := obj.(string)
 	mediaManager := media.GetMediaManager()
 	mediaPath := mediaManager.GetMediaPath(sessionId)
 	if mediaPath == "" {
@@ -207,7 +211,8 @@ func generateMediaSubtitles(c *gin.Context) {
 }
 
 func getMediaTaskState(c *gin.Context) {
-	sessionId := c.GetHeader("X-Session-Id")
+	obj, _ := c.Get(constant.SessionIdCtxKey)
+	sessionId := obj.(string)
 	state, found := task.GetTaskState(sessionId)
 	if !found {
 		state.Status = task.Completed
@@ -220,7 +225,8 @@ func getMediaTaskState(c *gin.Context) {
 }
 
 func getSubtitle(c *gin.Context) {
-	sessionId := c.GetHeader("X-Session-Id")
+	obj, _ := c.Get(constant.SessionIdCtxKey)
+	sessionId := obj.(string)
 	tempDir := configs.GetApiConfig().TempStorePath
 	subTitleFile := filepath.Join(tempDir, sessionId, "output.txt")
 	if stat, err := os.Stat(subTitleFile); errors.Is(err, os.ErrNotExist) || stat.IsDir() {

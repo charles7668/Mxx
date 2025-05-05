@@ -1,10 +1,12 @@
 package api
 
 import (
+	"Mxx/api/constant"
 	"Mxx/api/media"
 	"Mxx/api/session"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 func sessionCheckMiddleware(c *gin.Context) {
@@ -21,4 +23,7 @@ func sessionCheckMiddleware(c *gin.Context) {
 		c.Abort()
 		return
 	}
+	c.Set(constant.SessionIdCtxKey, sessionId)
+	// renew session
+	session.AddToManager(sessionId, time.Now())
 }
