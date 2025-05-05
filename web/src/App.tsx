@@ -8,7 +8,7 @@ import {
   UploadMediaAsync,
 } from "./api/api.ts";
 import { RenewSessionIdAsync } from "./session/session.ts";
-import { Box, Button, Text, Input, Spinner } from "@chakra-ui/react";
+import { Box, Button, Text, Input, Spinner, HStack } from "@chakra-ui/react";
 import { TaskStatus } from "./models/task_status.ts";
 
 function App() {
@@ -137,6 +137,16 @@ function App() {
     };
   };
 
+  const copyButtonHandler = () => {
+    if (subtitle) {
+      navigator.clipboard.writeText(subtitle).then(() => {
+        alert("Subtitle copied to clipboard");
+      });
+    } else {
+      alert("No subtitle to copy");
+    }
+  };
+
   useEffect(() => {
     const startTaskStatusTimer = () => {
       let tryCount = 0;
@@ -174,7 +184,7 @@ function App() {
   }, [uploadedMedia]);
 
   return (
-    <Box height="100vh" display="flex" flexDirection="column" maxHeight="100vh">
+    <Box height="100vh" display="flex" flexDirection="column">
       <Box
         display="flex"
         flexDirection="row"
@@ -193,7 +203,7 @@ function App() {
         )}
       </Box>
 
-      <Box flex={1} display="flex" flexDirection="row" overflow="auto">
+      <Box flex={1} display="flex" flexDirection="row" overflow="hidden">
         <Box
           display="flex"
           flexDirection="column"
@@ -201,6 +211,8 @@ function App() {
           justifyContent="space-between"
           p={4}
           height="100%"
+          maxHeight="100%"
+          maxW="300px"
         >
           <form onSubmit={handleSubmit}>
             <Input
@@ -219,7 +231,7 @@ function App() {
               Select file
             </Button>
 
-            {selectedFile && <Text mb={2}>{selectedFile.name}</Text>}
+            {selectedFile && <Text whiteSpace="normal" mb={2}>{selectedFile.name}</Text>}
 
             <Button type="submit" colorScheme="blue" mb={2}>
               Upload file
@@ -230,18 +242,23 @@ function App() {
             Generate Subtitle
           </Button>
         </Box>
+        <Box height="100%" display="flex" flexDirection="column">
+          <HStack>
+            <Button onClick={copyButtonHandler}>Copy</Button>
+          </HStack>
 
-        <Box
-          justifyContent="center"
-          alignItems="self-start"
-          height="100%"
-          maxHeight="100%"
-          overflow="auto"
-          p={4}
-        >
-          <Text fontSize="lg" fontWeight="bold" whiteSpace="pre-wrap">
-            {subtitle || "No subtitle generated yet."}
-          </Text>
+          <Box
+            justifyContent="center"
+            alignItems="self-start"
+            flex="1"
+            maxHeight="100%"
+            overflow="auto"
+            p={4}
+          >
+            <Text fontSize="lg" fontWeight="bold" whiteSpace="pre-wrap">
+              {subtitle || "No subtitle generated yet."}
+            </Text>
+          </Box>
         </Box>
       </Box>
     </Box>
