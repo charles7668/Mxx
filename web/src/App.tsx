@@ -21,8 +21,8 @@ function App() {
     message: "Idle",
   });
   const [needRefreshTaskStatus, setNeedRefreshTaskStatus] =
-    useState<boolean>(false);
-  const [waitingSubtitle, setWaitingSubtitle] = useState<boolean>(false);
+    useState<boolean>(true);
+  const [waitingSubtitle, setWaitingSubtitle] = useState<boolean>(true);
   const [subtitle, setSubtitle] = useState<string | null>(null);
 
   const renewTaskStatus = () => {
