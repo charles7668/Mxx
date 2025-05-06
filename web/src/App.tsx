@@ -22,7 +22,7 @@ function App() {
   });
   const [needRefreshTaskStatus, setNeedRefreshTaskStatus] =
     useState<boolean>(true);
-  const [waitingSubtitle, setWaitingSubtitle] = useState<boolean>(true);
+  const [waitingSubtitle, setWaitingSubtitle] = useState<boolean>(false);
   const [subtitle, setSubtitle] = useState<string | null>(null);
 
   const renewTaskStatus = () => {
@@ -49,9 +49,11 @@ function App() {
     const response = await GetSubtitleAsync();
     if (response === null) {
       alert("Failed to get subtitle");
+      return;
     } else if (response.status !== 200) {
       const data: ErrorResponse = await response.json();
       alert(`Failed to get subtitle: ${data.error}`);
+      return;
     }
     const data: ValueResponse = await response!.json();
     setSubtitle(data.value as string);
@@ -146,7 +148,7 @@ function App() {
           renewTaskStatus={renewTaskStatus}
           onGenerateSubtitleClick={handleGenerateSubtitleClick}
         />
-        <Box height="100%" display="flex" flexDirection="column">
+        <Box height="100%" display="flex" flexDirection="column" flex="1">
           <HStack>
             <Button onClick={copyButtonHandler}>Copy</Button>
           </HStack>
