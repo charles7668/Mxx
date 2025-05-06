@@ -11,7 +11,7 @@ import (
 
 func GetApiRouter() *gin.Engine {
 	graceful.InitContext()
-	router := gin.Default()
+	router := gin.New()
 	// Enable CORS
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"}, // Replace "*" with specific origins if needed
