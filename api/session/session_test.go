@@ -16,7 +16,7 @@ func TestSessionManagement(t *testing.T) {
 	if IsAlive(sessionId) {
 		t.Errorf("session should not be alive before adding")
 	}
-	AddToManager(sessionId, time.Now())
+	Update(sessionId, time.Now())
 	if !IsAlive(sessionId) {
 		t.Errorf("session should be alive")
 	}

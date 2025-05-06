@@ -4,7 +4,9 @@ import (
 	"Mxx/api/configs"
 	"Mxx/api/constant"
 	"Mxx/api/graceful"
+	"Mxx/api/log"
 	"Mxx/api/media"
+	"Mxx/api/models"
 	"Mxx/api/session"
 	"Mxx/api/task"
 	"Mxx/ffmpeg/converter"
@@ -23,30 +25,50 @@ import (
 
 func generateSessionId(c *gin.Context) {
 	sessionId := session.GenerateSessionId()
-	session.AddToManager(sessionId, time.Now())
-	c.JSON(200, gin.H{"session_id": sessionId})
+	generateTime := time.Now()
+	log.GetLogger().Sugar().Infof("generate session id %s at %s", sessionId, generateTime.Format(time.RFC3339))
+	session.Update(sessionId, generateTime)
+	c.JSON(http.StatusOK, &models.SessionResponse{
+		Status:    http.StatusOK,
+		SessionId: sessionId,
+	})
 }
 
 func mediaUpload(c *gin.Context) {
-	obj, _ := c.Get(constant.SessionIdCtxKey)
-	sessionId := obj.(string)
+	sessionId := c.GetString(constant.SessionIdCtxKey)
 	storeDir := filepath.Join(configs.GetApiConfig().MediaStorePath, sessionId)
 	err := os.MkdirAll(storeDir, os.ModePerm)
+	logger := log.GetLogger()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create directory"})
+		logger.Sugar().Errorf("failed to create directory for session : %s , err : %s", sessionId, err.Error())
+		c.JSON(http.StatusInternalServerError, &models.ErrorResponse{
+			Status: http.StatusInternalServerError,
+			Error:  "failed to create directory",
+		})
 		return
 	}
+
+	// If the sessionId is not a directory, return an error because a required file might have the same name as this ID.
 	if stat, err := os.Stat(storeDir); err != nil || !stat.IsDir() {
-		// If the sessionId is not a directory, return an error because a required file might have the same name as this ID.
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Session ID is invalid"})
+		logger.Sugar().Errorf("sessionId is invalid : %s", sessionId)
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Status: http.StatusUnauthorized,
+			Error:  "Session ID is invalid",
+		})
 		return
 	}
 
 	if state, found := task.GetTaskState(sessionId); found && state.Status == task.Running {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Other task is running Task : " + state.Task})
+		logger.Sugar().Infof("Another task is running : %s", state.Task)
+		c.JSON(http.StatusBadRequest, &models.ErrorResponse{
+			Status: http.StatusBadRequest,
+			Error:  "Other task is running Task : " + state.Task,
+		})
 		return
 	}
 
+	logger.Info("start upload file")
+	defer logger.Info("finish upload file")
 	task.StartTask(sessionId, task.State{
 		Task: "uploading files",
 	})
@@ -55,17 +77,30 @@ func mediaUpload(c *gin.Context) {
 	// get file from form
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File is required"})
+		logger.Error("failed to get file from form")
+		c.JSON(http.StatusBadRequest, &models.ErrorResponse{
+			Status: http.StatusBadRequest,
+			Error:  "File is required",
+		})
 		return
 	}
+
 	targetPath := filepath.Join(storeDir, file.Filename)
+	logger.Sugar().Infof("try save file to %s", targetPath)
 	if err := c.SaveUploadedFile(file, targetPath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
+		logger.Sugar().Errorf("failed to save file : %s , err : %s", targetPath, err.Error())
+		c.JSON(http.StatusInternalServerError, &models.ErrorResponse{
+			Status: http.StatusInternalServerError,
+			Error:  "Failed to save file",
+		})
 		return
 	}
 	mediaManager := media.GetMediaManager()
 	mediaManager.SetMediaPath(sessionId, targetPath)
-	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully", "file_path": targetPath})
+	c.JSON(http.StatusOK, &models.FileUploadResponse{
+		Status: http.StatusOK,
+		File:   file.Filename,
+	})
 }
 
 func getUploadedMedia(c *gin.Context) {
@@ -83,31 +118,37 @@ func getUploadedMedia(c *gin.Context) {
 }
 
 func generateMediaSubtitles(c *gin.Context) {
-	obj, _ := c.Get(constant.SessionIdCtxKey)
-	sessionId := obj.(string)
+	sessionId := c.GetString(constant.SessionIdCtxKey)
 	mediaManager := media.GetMediaManager()
 	mediaPath := mediaManager.GetMediaPath(sessionId)
+	logger := log.GetLogger()
 	if mediaPath == "" {
-		fmt.Printf("No media file found for session ID: %s\n", sessionId)
-		c.JSON(http.StatusNotFound, gin.H{"error": "No media file found"})
+		logger.Sugar().Errorf("No media file found for session ID: %s", sessionId)
+		c.JSON(http.StatusNotFound, &models.ErrorResponse{
+			Status: http.StatusNotFound,
+			Error:  "No media file found",
+		})
 		return
 	}
 	if state, found := task.GetTaskState(sessionId); found && state.Status == task.Running {
-		fmt.Printf("Other task is running\n")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"is_running": true,
-			"error":      "Other task is running Task : " + state.Task,
+		logger.Sugar().Infof("Another task is running : %s", state.Task)
+		c.JSON(http.StatusBadRequest, &models.ErrorResponse{
+			Status: http.StatusBadRequest,
+			Error:  "Another task is running : " + state.Task,
 		})
 		return
 	}
+	logger.Info("start generate media subtitles")
 	task.StartTask(sessionId, task.State{
-		Task: "generating subtitles",
+		Task: "start generate media subtitles",
 	})
 	go func() {
-		fmt.Printf("start download moedel\n")
+		defer logger.Info("finish generate media subtitles")
+		logger.Info("start download model")
 		task.StartTask(sessionId, task.State{
 			Task: "downloading model",
 		})
+		defer task.CompleteTask(sessionId)
 		apiConfig := configs.GetApiConfig()
 		modelPath := apiConfig.ModelStorePath
 		downloadCtx, downloadCancel := context.WithCancel(context.Background())
@@ -124,23 +165,23 @@ func generateMediaSubtitles(c *gin.Context) {
 		})
 		if err != nil {
 			if errors.Is(err, downloader.AlreadyDownloadedErr) {
-				fmt.Printf("%s\n", downloader.AlreadyDownloadedErr)
+				logger.Sugar().Infof("model already downloaded")
 				downloadCancel()
 			} else {
-				fmt.Printf("download error: %v\n", err)
+				logger.Sugar().Errorf("download error : %s", err.Error())
 				task.FailedTask(sessionId, downloadErr)
 				return
 			}
 		}
 		<-downloadCtx.Done()
 		if downloadErr != nil {
-			fmt.Printf("download error: %v\n", downloadErr)
+			logger.Sugar().Errorf("download error : %s", err.Error())
 			task.FailedTask(sessionId, downloadErr)
 			return
 		}
-		fmt.Printf("start convert file to wav\n")
+		logger.Info("start convert file to wav")
 		task.StartTask(sessionId, task.State{
-			Task: "start convert file to wav",
+			Task: "converting file to wav",
 		})
 		audioConverter := converter.CreateAudioConverter("ffmpeg")
 		mediaManager = media.GetMediaManager()
@@ -149,36 +190,37 @@ func generateMediaSubtitles(c *gin.Context) {
 		tempUUID := filepath.Join(tempDir, sessionId)
 		err = os.MkdirAll(tempUUID, os.ModePerm)
 		if err != nil {
-			fmt.Printf("failed to create temp dir: %s, err: %s\n", tempUUID, err)
+			logger.Sugar().Errorf("failed to create temp dir: %s, err: %s", tempUUID, err)
 			task.FailedTask(sessionId, err)
 			return
 		}
 		audioTarget := filepath.Join(tempUUID, "output.wav")
 		err = audioConverter.Convert(inputFilePath, audioTarget)
 		if err != nil {
-			fmt.Printf("failed to convert file: %s, err: %s\n", inputFilePath, err)
+			logger.Sugar().Errorf("failed to convert file: %s, err: %s", inputFilePath, err)
 			task.FailedTask(sessionId, err)
 			return
 		}
-		fmt.Printf("start generate subtitles\n")
+		logger.Info("start generate subtitles")
 		task.StartTask(sessionId, task.State{
-			Task: "start generate subtitles",
+			Task: "generating subtitles",
 		})
 		// write subtitles to file
 		subtitleFile := filepath.Join(tempUUID, "output.txt")
 		stream, err := os.Create(subtitleFile)
 		if err != nil {
-			fmt.Printf("failed to create file: %s, err: %s\n", subtitleFile, err)
+			logger.Sugar().Errorf("failed to create file: %s, err: %s", subtitleFile, err)
 			task.FailedTask(sessionId, err)
 			return
 		}
 		defer func(stream *os.File) {
 			err := stream.Close()
 			if err != nil {
-				fmt.Println("failed to close file: ", err)
+				logger.Sugar().Errorf("failed to close file: %s ", err.Error())
 			}
 		}(stream)
 
+		logger.Info("start generate subtitles by whisper")
 		var whisperErr error = nil
 		whisperContext, whisperCancelFunc := context.WithCancel(graceful.BackgroundContext)
 		whisperOptions := transcription.CreateOptions()
@@ -186,7 +228,7 @@ func generateMediaSubtitles(c *gin.Context) {
 			writeString := fmt.Sprintf("[%6s -> %6s] %s", segment.Start.Truncate(time.Millisecond), segment.End.Truncate(time.Millisecond), segment.Text)
 			_, writeErr := stream.WriteString(writeString + "\n")
 			if writeErr != nil {
-				fmt.Printf("failed to write file: %s, err: %s\n", subtitleFile, writeErr)
+				logger.Sugar().Errorf("failed to write file: %s, err: %s", subtitleFile, writeErr)
 				whisperCancelFunc()
 				whisperErr = writeErr
 			}
@@ -194,63 +236,73 @@ func generateMediaSubtitles(c *gin.Context) {
 		err = transcription.Transcribe(whisperContext, audioTarget, filepath.Join(modelPath, "tiny"), whisperOptions)
 		if err != nil {
 			whisperCancelFunc()
-			fmt.Printf("failed to transcribe file: %s, err: %s\n", audioTarget, err)
+			logger.Sugar().Errorf("failed to transcribe file: %s, err: %s", audioTarget, err)
 			task.FailedTask(sessionId, err)
 			return
 		}
 		if whisperErr != nil {
 			whisperCancelFunc()
-			fmt.Printf("failed to transcribe file: %s, err: %s\n", audioTarget, whisperErr)
+			logger.Sugar().Errorf("failed to transcribe file: %s, err: %s", audioTarget, whisperErr)
 			task.FailedTask(sessionId, whisperErr)
 			return
 		}
-		fmt.Printf("generate subtitle complete\n")
-		task.CompleteTask(sessionId)
 	}()
-	c.JSON(200, gin.H{"message": "Generate subtitles task started"})
+	c.JSON(200, struct{}{})
 }
 
 func getMediaTaskState(c *gin.Context) {
-	obj, _ := c.Get(constant.SessionIdCtxKey)
-	sessionId := obj.(string)
+	sessionId := c.GetString(constant.SessionIdCtxKey)
 	state, found := task.GetTaskState(sessionId)
 	if !found {
 		state.Status = task.Completed
 	}
 	status := state.String()
-	c.JSON(http.StatusOK, gin.H{
-		"task":   state.Task,
-		"status": status,
+	c.JSON(http.StatusOK, &models.TaskStateResponse{
+		Status:    http.StatusOK,
+		Task:      state.Task,
+		TaskState: status,
 	})
 }
 
 func getSubtitle(c *gin.Context) {
-	obj, _ := c.Get(constant.SessionIdCtxKey)
-	sessionId := obj.(string)
+	sessionId := c.GetString(constant.SessionIdCtxKey)
 	tempDir := configs.GetApiConfig().TempStorePath
 	subTitleFile := filepath.Join(tempDir, sessionId, "output.txt")
+	logger := log.GetLogger()
 	if stat, err := os.Stat(subTitleFile); errors.Is(err, os.ErrNotExist) || stat.IsDir() {
-		c.JSON(http.StatusNotFound, gin.H{"error": "No subtitle found"})
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Status: http.StatusNotFound,
+			Error:  "No subtitle found",
+		})
 		return
 	}
 	file, err := os.Open(subTitleFile)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open subtitle file"})
+		logger.Sugar().Errorf("failed to open file: %s, err: %s", subTitleFile, err)
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Status: http.StatusInternalServerError,
+			Error:  "Failed to open subtitle file",
+		})
 		return
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			fmt.Println("failed to close file: ", err)
+			logger.Sugar().Errorf("failed to close file: %s", err.Error())
 		}
 	}(file)
 	content, err := os.ReadFile(subTitleFile)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read subtitle file"})
+		logger.Sugar().Errorf("failed to read file: %s, err: %s", subTitleFile, err)
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Status: http.StatusInternalServerError,
+			Error:  "Failed to read subtitle file",
+		})
 		return
 	}
 	c.Header("Content-Type", "text/plain")
-	c.JSON(http.StatusOK, gin.H{
-		"result": string(content),
+	c.JSON(http.StatusOK, models.ValueResponse{
+		Status: http.StatusOK,
+		Value:  string(content),
 	})
 }

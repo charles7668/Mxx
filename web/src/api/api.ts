@@ -1,3 +1,5 @@
+import { SessionResponse } from "../models/response.ts";
+
 const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "";
 console.log(`API URL: ${API_URL}`);
 
@@ -12,11 +14,8 @@ async function GetSessionIdAsync() {
       return "";
     }
 
-    const data = await response.json();
-    if (data.session_id === undefined) {
-      return "";
-    }
-    return data.session_id as string;
+    const data: SessionResponse = await response.json();
+    return data.sessionId;
   } catch (err) {
     console.error("Error fetching session ID:", err);
     return "";
@@ -56,27 +55,12 @@ async function GetMediaTaskStatusAsync() {
   }
 }
 
-async function UploadMediaAsync(sessionId: string | null, formData: FormData) {
-  if (!sessionId) {
-    console.error("sessionId is null");
-    return null;
-  }
+async function UploadMediaAsync(formData: FormData) {
   try {
-    const response = await fetch(`${API_URL}/medias`, {
+    return await fetchWithAuth(`${API_URL}/medias`, {
       method: "POST",
       body: formData,
-      headers: {
-        "X-Session-Id": sessionId,
-      },
     });
-
-    if (response.status !== 200) {
-      const responseBody = await response.json();
-      console.error("failed to upload media : ", responseBody.error);
-      return responseBody;
-    }
-
-    return await response.json();
   } catch (err) {
     console.error("Error uploading media:", err);
     return null;

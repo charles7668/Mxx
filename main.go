@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Mxx/api/log"
 	"Mxx/cmd"
 	"errors"
 	"flag"
@@ -17,6 +18,8 @@ func main() {
 		_, _ = os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
 	}
+	logger := log.GetLogger()
+	defer logger.Sync()
 	err = cmd.Run(options)
 	if err != nil {
 		_, _ = os.Stderr.WriteString(err.Error() + "\n")

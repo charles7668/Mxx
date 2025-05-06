@@ -25,5 +25,5 @@ func sessionCheckMiddleware(c *gin.Context) {
 	}
 	c.Set(constant.SessionIdCtxKey, sessionId)
 	// renew session
-	session.AddToManager(sessionId, time.Now())
+	session.Update(sessionId, time.Now())
 }

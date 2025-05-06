@@ -11,7 +11,7 @@ var sessionAliveTime = 10 * time.Minute
 // this map is used to store the session id
 var sessionMap = make(map[string]time.Time)
 
-func AddToManager(sessionId string, timestamp time.Time) {
+func Update(sessionId string, timestamp time.Time) {
 	sessionMap[sessionId] = timestamp
 }
 

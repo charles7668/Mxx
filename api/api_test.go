@@ -2,6 +2,7 @@ package api
 
 import (
 	"Mxx/api/media"
+	"Mxx/api/models"
 	"Mxx/api/session"
 	"bytes"
 	"encoding/json"
@@ -25,11 +26,18 @@ func TestGetSessionRoute(t *testing.T) {
 
 	// Assert the response
 	if w.Code != http.StatusOK {
-		t.Errorf("Expected status code 200, got %d", w.Code)
+		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
 	}
-	if !strings.Contains(w.Body.String(), "session_id") {
-		t.Errorf("Response body does not contain session_id")
+	var response models.SessionResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
+
+	if response.SessionId == "" {
+		t.Errorf("Expected session_id in response, got empty")
+	}
+	t.Logf("Response : %+v\n", response)
 }
 
 func TestUploadRoute(t *testing.T) {
@@ -42,7 +50,7 @@ func TestUploadRoute(t *testing.T) {
 
 	// Assert the response
 	if w.Code != http.StatusUnauthorized {
-		t.Fatalf("Expected status code 401, got %d", w.Code)
+		t.Fatalf("Expected status code %d, got %d", http.StatusUnauthorized, w.Code)
 	}
 	if !strings.Contains(w.Body.String(), "Session ID is required") {
 		t.Fatalf("Response body does not contain the expected error message")
@@ -50,19 +58,19 @@ func TestUploadRoute(t *testing.T) {
 
 	// simulate with expired session
 	sessionId := session.GenerateSessionId()
-	session.AddToManager(sessionId, time.Now().Add(-time.Hour))
+	session.Update(sessionId, time.Now().Add(-time.Hour))
 	req, _ = http.NewRequest("POST", "/medias", nil)
 	req.Header.Set("X-Session-Id", sessionId)
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusUnauthorized {
-		t.Fatalf("Expected status code 401, got %d", w.Code)
+		t.Fatalf("Expected status code %d, got %d", http.StatusUnauthorized, w.Code)
 	}
 
 	// Simulate a POST request to /upload with not contains file
 	sessionId = session.GenerateSessionId()
-	session.AddToManager(sessionId, time.Now())
+	session.Update(sessionId, time.Now())
 	req, _ = http.NewRequest("POST", "/medias", nil)
 	req.Header.Set("X-Session-Id", sessionId)
 	// remove dir after test
@@ -77,7 +85,7 @@ func TestUploadRoute(t *testing.T) {
 
 	// Assert the response
 	if w.Code != http.StatusBadRequest {
-		t.Fatalf("Expected status code 400, got %d", w.Code)
+		t.Fatalf("Expected status code %d, got %d", http.StatusBadRequest, w.Code)
 	}
 	// test upload file , file is using []byte
 	fileContent := []byte("test file content")
@@ -103,7 +111,7 @@ func TestUploadRoute(t *testing.T) {
 
 	// Assert the response
 	if w.Code != http.StatusOK {
-		t.Fatalf("Expected status code 200, got %d", w.Code)
+		t.Fatalf("Expected status code %d, got %d", http.StatusOK, w.Code)
 	}
 
 	// Check if the file was saved correctly
@@ -118,7 +126,7 @@ func TestGetSubtitlesRoute(t *testing.T) {
 
 	// Simulate a POST request to /subtitles with media not uploaded
 	sessionId := session.GenerateSessionId()
-	session.AddToManager(sessionId, time.Now())
+	session.Update(sessionId, time.Now())
 	req, _ := http.NewRequest("POST", "/medias/subtitles", nil)
 	req.Header.Set("X-Session-Id", sessionId)
 	w := httptest.NewRecorder()
@@ -149,13 +157,13 @@ func TestGetSubtitlesRoute(t *testing.T) {
 		if w.Code != http.StatusOK {
 			t.Fatalf("Expected status code 200, got %d", w.Code)
 		}
-		var response map[string]interface{}
+		var response models.TaskStateResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		if err != nil {
 			t.Fatalf("Failed to unmarshal response: %v", err)
 		}
-		if response["task_state"] != "Running" {
-			t.Logf("Task complett or failed : %s", response["task_state"])
+		if response.TaskState != "Running" {
+			t.Logf("Task complett or failed : %s", response.TaskState)
 			break
 		}
 		time.Sleep(5 * time.Second)
@@ -167,13 +175,13 @@ func TestGetSubtitlesRoute(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected status code 200, got %d", w.Code)
 	}
-	var response map[string]interface{}
+	var response models.ValueResponse
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
-	if response["result"] == nil {
+	if response.Value == nil {
 		t.Fatalf("Expected result in response, got nil")
 	}
-	t.Log(response["result"].(string))
+	t.Log(response.Value.(string))
 }

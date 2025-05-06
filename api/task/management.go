@@ -23,7 +23,7 @@ func FailedTask(taskId string, error error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	state, found := GetTaskState(taskId)
-	if !found {
+	if !found || state.Status != Running {
 		return
 	}
 	if state.CancelFunc != nil {
@@ -41,7 +41,7 @@ func CompleteTask(taskId string) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	state, found := GetTaskState(taskId)
-	if !found {
+	if !found || state.Status != Running {
 		return
 	}
 	if state.CancelFunc != nil {

@@ -2,8 +2,11 @@ package api
 
 import (
 	"Mxx/api/graceful"
+	"Mxx/api/log"
 	"github.com/gin-contrib/cors"
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 func GetApiRouter() *gin.Engine {
@@ -16,6 +19,9 @@ func GetApiRouter() *gin.Engine {
 		AllowHeaders:     []string{"Origin", "Content-Type", "X-Session-Id"},
 		AllowCredentials: true,
 	}))
+	logger := log.GetLogger()
+	router.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	router.Use(ginzap.RecoveryWithZap(logger, true))
 	router.GET("/session", generateSessionId)
 	medias := router.Group("/medias")
 	{
