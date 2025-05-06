@@ -1,11 +1,12 @@
-import { Box, Button, Input, Text } from "@chakra-ui/react";
-import React, { useRef, useState } from "react";
+import { Box, Button, Input, Select, Spacer, Text } from "@chakra-ui/react";
+import React, { useMemo, useRef, useState } from "react";
 import { UploadMediaAsync } from "../api/api.ts";
 import { ErrorResponse } from "../models/response.ts";
+import { GenerateSubtitleRequest } from "../models/request.ts";
 
 interface SideMenuProps {
   renewTaskStatus: () => void;
-  onGenerateSubtitleClick: () => void;
+  onGenerateSubtitleClick: (request: GenerateSubtitleRequest) => void;
 }
 
 const SideMenu: React.FC<SideMenuProps> = ({
@@ -14,6 +15,28 @@ const SideMenu: React.FC<SideMenuProps> = ({
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [whisperModel, setWhisperModel] = useState<string>("tiny");
+  const supportWhisperModels = useMemo(() => {
+    return [
+      { value: "tiny", label: "Tiny (75 MiB)" },
+      { value: "tiny.en", label: "Tiny EN (75 MiB)" },
+      { value: "base", label: "Base (142 MiB)" },
+      { value: "base.en", label: "Base EN (142 MiB)" },
+      { value: "small", label: "Small (466 MiB)" },
+      { value: "small.en", label: "Small EN (466 MiB)" },
+      { value: "small.en-tdrz", label: "Small EN TDRZ (465 MiB)" },
+      { value: "medium", label: "Medium (1.5 GiB)" },
+      { value: "medium.en", label: "Medium EN (1.5 GiB)" },
+      { value: "large-v1", label: "Large V1 (2.9 GiB)" },
+      { value: "large-v2", label: "Large V2 (2.9 GiB)" },
+      { value: "large-v2-q5_0", label: "Large V2 Q5_0 (1.1 GiB)" },
+      { value: "large-v3", label: "Large V3 (2.9 GiB)" },
+      { value: "large-v3-q5_0", label: "Large V3 Q5_0 (1.1 GiB)" },
+      { value: "large-v3-turbo", label: "Large V3 Turbo (1.5 GiB)" },
+      { value: "large-v3-turbo-q5_0", label: "Large V3 Turbo Q5_0 (547 MiB)" },
+    ];
+  }, []);
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -87,7 +110,28 @@ const SideMenu: React.FC<SideMenuProps> = ({
         </Button>
       </form>
 
-      <Button onClick={onGenerateSubtitleClick} colorScheme="blue">
+      <Spacer />
+
+      <Text>Whisper Model</Text>
+      <Select
+        value={whisperModel}
+        onChange={(e) => setWhisperModel(e.target.value)}
+        mb={2}
+      >
+        {supportWhisperModels.map((model) => {
+          return (
+            <option key={model.value} value={model.value}>
+              {model.value}
+            </option>
+          );
+        })}
+      </Select>
+      <Button
+        onClick={() => {
+          onGenerateSubtitleClick({ Model: whisperModel });
+        }}
+        colorScheme="blue"
+      >
         Generate Subtitle
       </Button>
     </Box>

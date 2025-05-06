@@ -1,4 +1,5 @@
 import { SessionResponse } from "../models/response.ts";
+import { GenerateSubtitleRequest } from "../models/request.ts";
 
 const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "";
 console.log(`API URL: ${API_URL}`);
@@ -78,10 +79,13 @@ async function GetUploadedMediaAsync() {
   }
 }
 
-async function StartGenerateSubtitleTaskAsync() {
+async function StartGenerateSubtitleTaskAsync(
+  request: GenerateSubtitleRequest,
+) {
   try {
     return await fetchWithAuth(`${API_URL}/medias/subtitles`, {
       method: "POST",
+      body: JSON.stringify(request),
     });
   } catch (err) {
     console.error("Error starting subtitle task:", err);

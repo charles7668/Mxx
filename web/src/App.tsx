@@ -13,6 +13,7 @@ import {
   ValueResponse,
 } from "./models/response.ts";
 import SideMenu from "./components/SideMenu.tsx";
+import { GenerateSubtitleRequest } from "./models/request.ts";
 
 function App() {
   const [taskStatus, setTaskStatus] = useState<TaskStatus>({
@@ -28,8 +29,10 @@ function App() {
     setNeedRefreshTaskStatus(true);
   };
 
-  const handleGenerateSubtitleClick = async () => {
-    const response = await StartGenerateSubtitleTaskAsync();
+  const handleGenerateSubtitleClick = async (
+    request: GenerateSubtitleRequest,
+  ) => {
+    const response = await StartGenerateSubtitleTaskAsync(request);
     if (response === null) {
       alert("Failed to start generating Subtitle");
       return;

@@ -119,6 +119,15 @@ func getUploadedMedia(c *gin.Context) {
 
 func generateMediaSubtitles(c *gin.Context) {
 	sessionId := c.GetString(constant.SessionIdCtxKey)
+	var body models.GenerateSubtitleRequest
+	if err := c.ShouldBindJSON(&body); err != nil {
+		log.GetLogger().Sugar().Errorf("failed to bind json : %s", err.Error())
+		c.JSON(http.StatusBadRequest, &models.ErrorResponse{
+			Status: http.StatusBadRequest,
+			Error:  "Invalid request",
+		})
+		return
+	}
 	mediaManager := media.GetMediaManager()
 	mediaPath := mediaManager.GetMediaPath(sessionId)
 	logger := log.GetLogger()
@@ -153,7 +162,7 @@ func generateMediaSubtitles(c *gin.Context) {
 		modelPath := apiConfig.ModelStorePath
 		downloadCtx, downloadCancel := context.WithCancel(context.Background())
 		var downloadErr error = nil
-		err := downloader.Download(downloadCtx, "tiny", modelPath, func(progress float32, err error) {
+		err := downloader.Download(downloadCtx, body.Model, modelPath, func(progress float32, err error) {
 			if err != nil {
 				downloadCancel()
 				downloadErr = err
@@ -233,7 +242,7 @@ func generateMediaSubtitles(c *gin.Context) {
 				whisperErr = writeErr
 			}
 		}
-		err = transcription.Transcribe(whisperContext, audioTarget, filepath.Join(modelPath, "tiny"), whisperOptions)
+		err = transcription.Transcribe(whisperContext, audioTarget, filepath.Join(modelPath, body.Model), whisperOptions)
 		if err != nil {
 			whisperCancelFunc()
 			logger.Sugar().Errorf("failed to transcribe file: %s, err: %s", audioTarget, err)
