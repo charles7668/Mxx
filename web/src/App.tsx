@@ -158,6 +158,7 @@ function App() {
             maxHeight="100%"
             overflow="auto"
             p={4}
+            border="3px solid red"
           >
             <Text fontSize="lg" fontWeight="bold" whiteSpace="pre-wrap">
               {subtitle || "No subtitle generated yet."}
