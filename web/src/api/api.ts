@@ -104,6 +104,11 @@ async function GetSubtitleAsync() {
   }
 }
 
+function GetPreviewMediaUrl() {
+  const storedSessionId = sessionStorage.getItem("sessionId") || "";
+  return `${API_URL}/video/${storedSessionId}/output.m3u8`;
+}
+
 export {
   GetSessionIdAsync,
   UploadMediaAsync,
@@ -111,4 +116,5 @@ export {
   GetUploadedMediaAsync,
   StartGenerateSubtitleTaskAsync,
   GetSubtitleAsync,
+  GetPreviewMediaUrl,
 };

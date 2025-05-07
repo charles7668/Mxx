@@ -33,5 +33,8 @@ func GetApiRouter() *gin.Engine {
 		medias.GET("/subtitles", getSubtitle)
 		medias.GET("/task", getMediaTaskState)
 	}
+	router.GET("/video/:token/output.m3u8", getPreviewMediaList)
+	router.GET("/video/:token/:segment", getPreviewMediaFile)
+
 	return router
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import "./App.css";
 import {
   GetMediaTaskStatusAsync,
+  GetPreviewMediaUrl,
   GetSubtitleAsync,
   StartGenerateSubtitleTaskAsync,
 } from "./api/api.ts";
@@ -14,6 +15,7 @@ import {
 } from "./models/response.ts";
 import SideMenu from "./components/SideMenu.tsx";
 import { GenerateSubtitleRequest } from "./models/request.ts";
+import VideoPlayer from "./components/VideoPlayer.tsx";
 
 function App() {
   const [taskStatus, setTaskStatus] = useState<TaskStatus>({
@@ -24,6 +26,8 @@ function App() {
     useState<boolean>(true);
   const [waitingSubtitle, setWaitingSubtitle] = useState<boolean>(false);
   const [subtitle, setSubtitle] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [showPreviewVideo, setShowPreviewVideo] = useState<boolean>(false);
 
   const renewTaskStatus = () => {
     setNeedRefreshTaskStatus(true);
@@ -91,6 +95,10 @@ function App() {
     }
   };
 
+  const handleUploadSuccess = () => {
+    setVideoUrl(GetPreviewMediaUrl());
+  };
+
   useEffect(() => {
     const startTaskStatusTimer = () => {
       let tryCount = 0;
@@ -147,8 +155,25 @@ function App() {
         <SideMenu
           renewTaskStatus={renewTaskStatus}
           onGenerateSubtitleClick={handleGenerateSubtitleClick}
+          onUploadedSuccess={handleUploadSuccess}
         />
         <Box height="100%" display="flex" flexDirection="column" flex="1">
+          {videoUrl && (
+            <Button
+              onClick={() => setShowPreviewVideo(!showPreviewVideo)}
+              alignSelf="center"
+              width="auto"
+            >
+              Toggle media preview
+            </Button>
+          )}
+
+          {showPreviewVideo && (
+            <Box display="flex" justifyContent="center" mt={2} mb={2}>
+              <VideoPlayer videoUrl={videoUrl ?? ""}></VideoPlayer>
+            </Box>
+          )}
+
           <HStack>
             <Button onClick={copyButtonHandler}>Copy</Button>
           </HStack>

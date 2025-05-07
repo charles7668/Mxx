@@ -19,6 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 )
@@ -97,6 +98,19 @@ func mediaUpload(c *gin.Context) {
 	}
 	mediaManager := media.GetMediaManager()
 	mediaManager.SetMediaPath(sessionId, targetPath)
+
+	m3u8Converter := converter.CreateM3U8Converter("ffmpeg")
+	m3u8Target := filepath.Join(storeDir, "output.m3u8")
+	err = m3u8Converter.Convert(targetPath, m3u8Target)
+	if err != nil {
+		logger.Sugar().Errorf("failed to save m3u8 : %s , err : %s", targetPath, err.Error())
+		c.JSON(http.StatusInternalServerError, &models.ErrorResponse{
+			Status: http.StatusInternalServerError,
+			Error:  "Failed to convert file to m3u8",
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, &models.FileUploadResponse{
 		Status: http.StatusOK,
 		File:   file.Filename,
@@ -314,4 +328,53 @@ func getSubtitle(c *gin.Context) {
 		Status: http.StatusOK,
 		Value:  string(content),
 	})
+}
+
+func getPreviewMediaList(c *gin.Context) {
+	token := c.Param("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Status: http.StatusBadRequest,
+			Error:  "Token is required",
+		})
+		return
+	}
+	mediaManager := media.GetMediaManager()
+	mediaPath := mediaManager.GetMediaPath(token)
+	mediaDir := path.Dir(mediaPath)
+	m3u8Path := filepath.Join(mediaDir, "output.m3u8")
+	if _, err := os.Stat(m3u8Path); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Status: http.StatusNotFound,
+			Error:  "No media file found",
+		})
+		return
+	}
+	c.Header("Content-Type", "application/vnd.apple.mpegurl")
+	c.File(m3u8Path)
+}
+
+func getPreviewMediaFile(c *gin.Context) {
+	token := c.Param("token")
+	requestFile := c.Param("segment")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Status: http.StatusBadRequest,
+			Error:  "Token is required",
+		})
+		return
+	}
+	mediaManager := media.GetMediaManager()
+	mediaPath := mediaManager.GetMediaPath(token)
+	mediaDir := path.Dir(mediaPath)
+	tsPath := filepath.Join(mediaDir, requestFile)
+	if _, err := os.Stat(tsPath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Status: http.StatusNotFound,
+			Error:  "No media file found",
+		})
+		return
+	}
+	c.Header("Content-Type", "application/vnd.apple.mpegurl")
+	c.File(tsPath)
 }

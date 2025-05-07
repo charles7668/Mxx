@@ -7,11 +7,13 @@ import { GenerateSubtitleRequest } from "../models/request.ts";
 interface SideMenuProps {
   renewTaskStatus: () => void;
   onGenerateSubtitleClick: (request: GenerateSubtitleRequest) => void;
+  onUploadedSuccess: () => void;
 }
 
 const SideMenu: React.FC<SideMenuProps> = ({
   renewTaskStatus,
   onGenerateSubtitleClick,
+  onUploadedSuccess,
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,6 +66,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
       return;
     }
     alert("File uploaded successfully");
+    onUploadedSuccess();
   };
 
   return (

@@ -41,6 +41,11 @@ func TestGetSessionRoute(t *testing.T) {
 }
 
 func TestUploadRoute(t *testing.T) {
+	testDir, findEnv := os.LookupEnv("FFMPEG_TEST_DIR")
+	if !findEnv {
+		t.Fatalf("Please set the FFMPEG_TEST_DIR environment variable to the test directory")
+	}
+	inputFile := filepath.Join(testDir, "test_ffmpeg.mp4")
 	router := GetApiRouter()
 
 	// Simulate a POST request to /upload without a session ID
@@ -87,7 +92,7 @@ func TestUploadRoute(t *testing.T) {
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("Expected status code %d, got %d", http.StatusBadRequest, w.Code)
 	}
-	// test upload file , file is using []byte
+	// test upload txt file , file is using []byte
 	fileContent := []byte("test file content")
 	fileName := "test.txt"
 	var buf bytes.Buffer
@@ -110,12 +115,46 @@ func TestUploadRoute(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	// Assert the response
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("Expected status code %d, got %d", http.StatusInternalServerError, w.Code)
+	}
+
+	// test upload media file
+	mediaFile, err := os.OpenFile(inputFile, os.O_RDONLY, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fileStat, err := mediaFile.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fileContent = make([]byte, fileStat.Size())
+	_, err = mediaFile.Read(fileContent)
+	writer = multipart.NewWriter(&buf)
+	part, err = writer.CreateFormFile("file", filepath.Base(inputFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = part.Write(fileContent)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_ = writer.Close()
+
+	req, _ = http.NewRequest("POST", "/medias", &buf)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("X-Session-Id", sessionId)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Assert the response
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected status code %d, got %d", http.StatusOK, w.Code)
 	}
 
 	// Check if the file was saved correctly
-	targetPath := filepath.Join("data/media", sessionId, fileName)
+	targetPath := filepath.Join("data/media", sessionId, filepath.Base(inputFile))
 	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
 		t.Fatalf("Uploaded file does not exist: %v", err)
 	}
