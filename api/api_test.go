@@ -127,7 +127,15 @@ func TestGetSubtitlesRoute(t *testing.T) {
 	// Simulate a POST request to /subtitles with media not uploaded
 	sessionId := session.GenerateSessionId()
 	session.Update(sessionId, time.Now())
-	req, _ := http.NewRequest("POST", "/medias/subtitles", nil)
+	requestBody := models.GenerateSubtitleRequest{
+		Model: "tiny",
+	}
+	bodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		t.Fatalf("Failed to marshal request body: %v", err)
+	}
+	req, _ := http.NewRequest("POST", "/medias/subtitles", bytes.NewBuffer(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Session-Id", sessionId)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -140,7 +148,7 @@ func TestGetSubtitlesRoute(t *testing.T) {
 	// Add a media path to the manager
 	manager := media.GetMediaManager()
 	manager.SetMediaPath(sessionId, "../TestSrc/test_ffmpeg.mp4")
-	req, _ = http.NewRequest("POST", "/medias/subtitles", nil)
+	req, _ = http.NewRequest("POST", "/medias/subtitles", bytes.NewBuffer(bodyBytes))
 	req.Header.Set("X-Session-Id", sessionId)
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -150,7 +158,7 @@ func TestGetSubtitlesRoute(t *testing.T) {
 	}
 
 	for {
-		req, _ = http.NewRequest("GET", "/medias/task", nil)
+		req, _ = http.NewRequest("GET", "/medias/task", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("X-Session-Id", sessionId)
 		w = httptest.NewRecorder()
 		router.ServeHTTP(w, req)
@@ -168,7 +176,7 @@ func TestGetSubtitlesRoute(t *testing.T) {
 		}
 		time.Sleep(5 * time.Second)
 	}
-	req, _ = http.NewRequest("GET", "/medias/subtitles", nil)
+	req, _ = http.NewRequest("GET", "/medias/subtitles", bytes.NewBuffer(bodyBytes))
 	req.Header.Set("X-Session-Id", sessionId)
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -176,7 +184,7 @@ func TestGetSubtitlesRoute(t *testing.T) {
 		t.Fatalf("Expected status code 200, got %d", w.Code)
 	}
 	var response models.ValueResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	err = json.Unmarshal(w.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
