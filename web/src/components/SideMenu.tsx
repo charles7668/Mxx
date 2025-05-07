@@ -85,15 +85,6 @@ const SideMenu: React.FC<SideMenuProps> = ({
           display="none"
         />
 
-        <Button
-          type="button"
-          colorScheme="green"
-          onClick={handleUploadClick}
-          mb={2}
-        >
-          Select file
-        </Button>
-
         {selectedFile && (
           <Text
             maxW="100%"
@@ -104,6 +95,15 @@ const SideMenu: React.FC<SideMenuProps> = ({
             {selectedFile.name}
           </Text>
         )}
+
+        <Button
+          type="button"
+          colorScheme="green"
+          onClick={handleUploadClick}
+          mb={2}
+        >
+          Select file
+        </Button>
 
         <Button type="submit" colorScheme="blue" mb={2}>
           Upload file
