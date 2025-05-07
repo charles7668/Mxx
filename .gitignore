@@ -26,3 +26,8 @@ go.work.sum
 
 # ignore generated files in TestSrc
 testdata/
+
+# ignore generated files in test
+/api/data/
+/data/
+/TestSrc/
