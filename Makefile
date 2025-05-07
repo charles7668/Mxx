@@ -5,15 +5,21 @@ export CGO_LDFLAGS=-L$(CURDIR)/whisper/lib
 export FFMPEG_TEST_DIR=$(CURDIR)/TestSrc
 export WHISPER_TEST_DIR=$(CURDIR)/TestSrc
 
-build:
+build-backend:
 	go build .
+build-frontend:
+	cd web && npm install && npm run build
+build: build-backend build-frontend
 
 # use this command with make run ARGS="put your args here"
-run:
+run-api:
 	go run main.go $(ARGS)
 
-clean:
+clean-backend:
 	go clean
+clean-frontend:
+	rm -rf $(CURDIR)/dist
+clean: clean-backend clean-frontend
 
 test:
 	go test -v ./...
