@@ -8,19 +8,20 @@ import (
 	"Mxx/api/media"
 	"Mxx/api/models"
 	"Mxx/api/session"
+	"Mxx/api/subtitle"
 	"Mxx/api/task"
 	"Mxx/ffmpeg/converter"
 	"Mxx/whisper/downloader"
 	"Mxx/whisper/transcription"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/ggerganov/whisper.cpp/bindings/go/pkg/whisper"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -229,32 +230,19 @@ func generateMediaSubtitles(c *gin.Context) {
 			Task: "generating subtitles",
 		})
 		// write subtitles to file
-		subtitleFile := filepath.Join(tempUUID, "output.txt")
-		stream, err := os.Create(subtitleFile)
-		if err != nil {
-			logger.Sugar().Errorf("failed to create file: %s, err: %s", subtitleFile, err)
-			task.FailedTask(sessionId, err)
-			return
-		}
-		defer func(stream *os.File) {
-			err := stream.Close()
-			if err != nil {
-				logger.Sugar().Errorf("failed to close file: %s ", err.Error())
-			}
-		}(stream)
-
 		logger.Info("start generate subtitles by whisper")
+		subtitleManager := subtitle.GetManager()
+		subtitleManager.Clear(sessionId)
 		var whisperErr error = nil
 		whisperContext, whisperCancelFunc := context.WithCancel(graceful.BackgroundContext)
 		whisperOptions := transcription.CreateOptions()
 		whisperOptions.SegmentCallback = func(segment whisper.Segment) {
-			writeString := fmt.Sprintf("[%6s -> %6s] %s", segment.Start.Truncate(time.Millisecond), segment.End.Truncate(time.Millisecond), segment.Text)
-			_, writeErr := stream.WriteString(writeString + "\n")
-			if writeErr != nil {
-				logger.Sugar().Errorf("failed to write file: %s, err: %s", subtitleFile, writeErr)
-				whisperCancelFunc()
-				whisperErr = writeErr
+			store := subtitle.Segment{
+				StartTime: segment.Start,
+				EndTime:   segment.End,
+				Text:      segment.Text,
 			}
+			subtitleManager.Add(sessionId, store)
 		}
 		err = transcription.Transcribe(whisperContext, audioTarget, filepath.Join(modelPath, body.Model), whisperOptions)
 		if err != nil {
@@ -263,8 +251,8 @@ func generateMediaSubtitles(c *gin.Context) {
 			task.FailedTask(sessionId, err)
 			return
 		}
+		whisperCancelFunc()
 		if whisperErr != nil {
-			whisperCancelFunc()
 			logger.Sugar().Errorf("failed to transcribe file: %s, err: %s", audioTarget, whisperErr)
 			task.FailedTask(sessionId, whisperErr)
 			return
@@ -289,41 +277,28 @@ func getMediaTaskState(c *gin.Context) {
 
 func getSubtitle(c *gin.Context) {
 	sessionId := c.GetString(constant.SessionIdCtxKey)
-	tempDir := configs.GetApiConfig().TempStorePath
-	subTitleFile := filepath.Join(tempDir, sessionId, "output.txt")
-	logger := log.GetLogger()
-	if stat, err := os.Stat(subTitleFile); errors.Is(err, os.ErrNotExist) || stat.IsDir() {
+	subtitleManager := subtitle.GetManager()
+	if !subtitleManager.Exist(sessionId) {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{
 			Status: http.StatusNotFound,
-			Error:  "No subtitle found",
+			Error:  "subtitle not found",
 		})
 		return
 	}
-	file, err := os.Open(subTitleFile)
-	if err != nil {
-		logger.Sugar().Errorf("failed to open file: %s, err: %s", subTitleFile, err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-			Status: http.StatusInternalServerError,
-			Error:  "Failed to open subtitle file",
-		})
-		return
+	var builder strings.Builder
+
+	for _, segment := range subtitleManager.GetSegments(sessionId) {
+		builder.WriteString("[")
+		builder.WriteString(segment.StartTime.String())
+		builder.WriteString(" -> ")
+		builder.WriteString(segment.EndTime.String())
+		builder.WriteString("] ")
+		builder.WriteString(segment.Text)
+		builder.WriteString("\n")
 	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			logger.Sugar().Errorf("failed to close file: %s", err.Error())
-		}
-	}(file)
-	content, err := os.ReadFile(subTitleFile)
-	if err != nil {
-		logger.Sugar().Errorf("failed to read file: %s, err: %s", subTitleFile, err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-			Status: http.StatusInternalServerError,
-			Error:  "Failed to read subtitle file",
-		})
-		return
-	}
-	c.Header("Content-Type", "text/plain")
+	content := []byte(builder.String())
+
+	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusOK, models.ValueResponse{
 		Status: http.StatusOK,
 		Value:  string(content),
