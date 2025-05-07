@@ -305,6 +305,22 @@ func getSubtitle(c *gin.Context) {
 	})
 }
 
+func getASSFormatSubtitle(c *gin.Context) {
+	sessionId := c.GetString(constant.SessionIdCtxKey)
+	subtitleManager := subtitle.GetManager()
+	if !subtitleManager.Exist(sessionId) {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Status: http.StatusNotFound,
+			Error:  "subtitle not found",
+		})
+		return
+	}
+	assContent := subtitleManager.ToASS(sessionId)
+	c.Header("Content-Disposition", "attachment; filename=subtitles.ass")
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	c.String(http.StatusOK, assContent)
+}
+
 func getPreviewMediaList(c *gin.Context) {
 	token := c.Param("token")
 	if token == "" {

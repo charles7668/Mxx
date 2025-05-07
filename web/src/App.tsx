@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import {
+  GetASSFile,
   GetMediaTaskStatusAsync,
   GetPreviewMediaUrl,
   GetSubtitleAsync,
@@ -95,6 +96,28 @@ function App() {
     }
   };
 
+  const downloadASSClickHandler = async () => {
+    const response = await GetASSFile();
+    if (response === null) {
+      alert("Failed to download ASS file");
+      return;
+    } else if (response.status !== 200) {
+      const errResponse: ErrorResponse = await response.json();
+      alert("Failed to download ASS file : " + errResponse.error);
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "subtitle.ass"; // Set the desired file name
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
   const handleUploadSuccess = () => {
     setVideoUrl(GetPreviewMediaUrl());
   };
@@ -176,6 +199,7 @@ function App() {
 
           <HStack>
             <Button onClick={copyButtonHandler}>Copy</Button>
+            <Button onClick={downloadASSClickHandler}>Downlaod ASS</Button>
           </HStack>
 
           <Box

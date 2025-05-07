@@ -1,6 +1,11 @@
 package subtitle
 
-import "sync"
+import (
+	"fmt"
+	"strings"
+	"sync"
+	"time"
+)
 
 type Manager struct {
 	cache map[string][]Segment
@@ -47,4 +52,40 @@ func (m *Manager) GetSegments(sessionId string) []Segment {
 func (m *Manager) Exist(sessionId string) bool {
 	_, ok := m.cache[sessionId]
 	return ok
+}
+
+func duratiionToASSTimeFormat(d *time.Duration) string {
+	hours := int(d.Hours())
+	minutes := int(d.Minutes()) % 60
+	seconds := int(d.Seconds()) % 60
+	totalCentiseconds := d.Milliseconds() / 10
+	centiSeconds := int(totalCentiseconds) % 100
+
+	return fmt.Sprintf("%02d:%02d:%02d.%02d", hours, minutes, seconds, centiSeconds)
+}
+
+func (m *Manager) ToASS(sessionId string) string {
+	var builder strings.Builder
+
+	builder.WriteString("[Script Info]\n")
+	builder.WriteString("Title: Subtitles\n")
+	builder.WriteString("Original Script: Mxx\n")
+	builder.WriteString("ScriptType: v4.00+\n")
+	builder.WriteString("PlayResX: 1280\n")
+	builder.WriteString("PlayResY: 720\n")
+	builder.WriteString("Collisions: Normal\n")
+	builder.WriteString("WrapStyle: 0\n")
+	builder.WriteString("ScaledBorderAndShadow: yes\n")
+
+	builder.WriteString("[V4+ Styles]\n")
+	builder.WriteString("Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n")
+	builder.WriteString("Style: Default,Arial,36,&H00FFFFFF,&H000000FF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,2,2,2,10,10,10,1\n")
+
+	builder.WriteString("[Events]\n")
+	builder.WriteString("Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n")
+	for _, segment := range m.cache[sessionId] {
+		builder.WriteString(fmt.Sprintf("Dialogue: 0,%s,%s,Default,,0,0,0,,%s\n", duratiionToASSTimeFormat(&segment.StartTime), duratiionToASSTimeFormat(&segment.EndTime), segment.Text))
+	}
+	result := builder.String()
+	return result
 }

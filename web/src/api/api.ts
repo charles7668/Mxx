@@ -109,6 +109,17 @@ function GetPreviewMediaUrl() {
   return `${API_URL}/video/${storedSessionId}/output.m3u8`;
 }
 
+async function GetASSFile() {
+  try {
+    return await fetchWithAuth(`${API_URL}/medias/subtitles/ass`, {
+      method: "GET",
+    });
+  } catch (err) {
+    console.error("Error download ASS file", err);
+    return null;
+  }
+}
+
 export {
   GetSessionIdAsync,
   UploadMediaAsync,
@@ -117,4 +128,5 @@ export {
   StartGenerateSubtitleTaskAsync,
   GetSubtitleAsync,
   GetPreviewMediaUrl,
+  GetASSFile,
 };
