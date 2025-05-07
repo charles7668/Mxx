@@ -192,7 +192,7 @@ function App() {
           )}
 
           {showPreviewVideo && (
-            <Box display="flex" justifyContent="center" mt={2} mb={2}>
+            <Box mt={2} mb={2} ml="auto" mr="auto">
               <VideoPlayer videoUrl={videoUrl ?? ""}></VideoPlayer>
             </Box>
           )}

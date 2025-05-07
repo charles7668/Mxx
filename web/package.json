@@ -15,6 +15,7 @@
     "@emotion/styled": "^11.14.0",
     "framer-motion": "^12.9.2",
     "hls.js": "^1.6.2",
+    "libass-wasm": "^4.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
