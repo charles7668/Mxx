@@ -3,7 +3,8 @@ package log
 import "go.uber.org/zap"
 
 var (
-	logger *zap.Logger
+	apiLogger   *zap.Logger
+	innerLogger *zap.Logger
 )
 
 func init() {
@@ -11,9 +12,18 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	logger = nLogger
+	nInnerLogger, err := zap.NewDevelopment()
+	if err != nil {
+		panic(err)
+	}
+	apiLogger = nLogger
+	innerLogger = nInnerLogger
 }
 
-func GetLogger() *zap.Logger {
-	return logger
+func GetApiLogger() *zap.Logger {
+	return apiLogger
+}
+
+func GetInnerLogger() *zap.Logger {
+	return innerLogger
 }

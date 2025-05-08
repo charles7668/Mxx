@@ -18,7 +18,7 @@ func main() {
 		_, _ = os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
 	}
-	logger := log.GetLogger()
+	logger := log.GetApiLogger()
 	defer logger.Sync()
 	err = cmd.Run(options)
 	if err != nil {

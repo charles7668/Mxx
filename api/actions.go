@@ -17,6 +17,7 @@ import (
 	"errors"
 	"github.com/ggerganov/whisper.cpp/bindings/go/pkg/whisper"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"net/http"
 	"os"
 	"path"
@@ -28,7 +29,7 @@ import (
 func generateSessionId(c *gin.Context) {
 	sessionId := session.GenerateSessionId()
 	generateTime := time.Now()
-	log.GetLogger().Sugar().Infof("generate session id %s at %s", sessionId, generateTime.Format(time.RFC3339))
+	log.GetApiLogger().Sugar().Infof("generate session id %s at %s", sessionId, generateTime.Format(time.RFC3339))
 	session.Update(sessionId, generateTime)
 	c.JSON(http.StatusOK, &models.SessionResponse{
 		Status:    http.StatusOK,
@@ -40,7 +41,7 @@ func mediaUpload(c *gin.Context) {
 	sessionId := c.GetString(constant.SessionIdCtxKey)
 	storeDir := filepath.Join(configs.GetApiConfig().MediaStorePath, sessionId)
 	err := os.MkdirAll(storeDir, os.ModePerm)
-	logger := log.GetLogger()
+	logger := getLoggerFromContext(c)
 	if err != nil {
 		logger.Sugar().Errorf("failed to create directory for session : %s , err : %s", sessionId, err.Error())
 		c.JSON(http.StatusInternalServerError, &models.ErrorResponse{
@@ -136,7 +137,7 @@ func generateMediaSubtitles(c *gin.Context) {
 	sessionId := c.GetString(constant.SessionIdCtxKey)
 	var body models.GenerateSubtitleRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
-		log.GetLogger().Sugar().Errorf("failed to bind json : %s", err.Error())
+		log.GetApiLogger().Sugar().Errorf("failed to bind json : %s", err.Error())
 		c.JSON(http.StatusBadRequest, &models.ErrorResponse{
 			Status: http.StatusBadRequest,
 			Error:  "Invalid request",
@@ -145,7 +146,7 @@ func generateMediaSubtitles(c *gin.Context) {
 	}
 	mediaManager := media.GetMediaManager()
 	mediaPath := mediaManager.GetMediaPath(sessionId)
-	logger := log.GetLogger()
+	logger := getLoggerFromContext(c)
 	if mediaPath == "" {
 		logger.Sugar().Errorf("No media file found for session ID: %s", sessionId)
 		c.JSON(http.StatusNotFound, &models.ErrorResponse{
@@ -373,4 +374,14 @@ func getPreviewMediaFile(c *gin.Context) {
 	}
 	c.Header("Content-Type", "application/vnd.apple.mpegurl")
 	c.File(tsPath)
+}
+
+// getLoggerFromContext retrieves the logger from the context , if not set return default inner logger
+func getLoggerFromContext(c *gin.Context) *zap.Logger {
+	loggerObj, _ := c.Get(constant.LoggerCtxKey)
+	logger := loggerObj.(*zap.Logger)
+	if logger == nil {
+		logger = log.GetInnerLogger()
+	}
+	return logger
 }

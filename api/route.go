@@ -19,14 +19,16 @@ func GetApiRouter() *gin.Engine {
 		AllowHeaders:     []string{"Origin", "Content-Type", "X-Session-Id"},
 		AllowCredentials: true,
 	}))
-	logger := log.GetLogger()
+	logger := log.GetApiLogger()
 	router.Use(ginzap.Ginzap(logger, time.RFC3339, true))
 	router.Use(ginzap.RecoveryWithZap(logger, true))
+	router.Use(prepareLogger)
 	router.GET("/session", generateSessionId)
 	medias := router.Group("/medias")
 	{
 		// session check middleware
 		medias.Use(sessionCheckMiddleware)
+		medias.Use(prepareLoggerWithSessionField)
 		medias.POST("", mediaUpload)
 		medias.GET("", getUploadedMedia)
 		medias.POST("/subtitles", generateMediaSubtitles)
@@ -34,8 +36,14 @@ func GetApiRouter() *gin.Engine {
 		medias.GET("/subtitles/ass", getASSFormatSubtitle)
 		medias.GET("/task", getMediaTaskState)
 	}
-	router.GET("/video/:token/output.m3u8", getPreviewMediaList)
-	router.GET("/video/:token/:segment", getPreviewMediaFile)
+
+	videos := router.Group("/video/:token")
+	{
+		videos.Use(sessionCheckMiddleware)
+		videos.Use(prepareLoggerWithSessionField)
+		videos.GET("/output.m3u8", getPreviewMediaList)
+		videos.GET("/:segment", getPreviewMediaFile)
+	}
 
 	return router
 }
