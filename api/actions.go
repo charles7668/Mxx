@@ -100,7 +100,7 @@ func mediaUpload(c *gin.Context) {
 	mediaManager := media.GetMediaManager()
 	mediaManager.SetMediaPath(sessionId, targetPath)
 
-	m3u8Converter := converter.CreateM3U8Converter("ffmpeg")
+	m3u8Converter := converter.CreateM3U8Converter("")
 	m3u8Target := filepath.Join(storeDir, "output.m3u8")
 	err = m3u8Converter.Convert(targetPath, m3u8Target)
 	if err != nil {
@@ -207,7 +207,7 @@ func generateMediaSubtitles(c *gin.Context) {
 		task.StartTask(sessionId, task.State{
 			Task: "converting file to wav",
 		})
-		audioConverter := converter.CreateAudioConverter("ffmpeg")
+		audioConverter := converter.CreateAudioConverter("")
 		mediaManager = media.GetMediaManager()
 		inputFilePath := mediaManager.GetMediaPath(sessionId)
 		tempDir := apiConfig.TempStorePath

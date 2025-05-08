@@ -1,5 +1,14 @@
-export CGO_CFLAGS=-I$(CURDIR)/whisper/include
-export CGO_LDFLAGS=-L$(CURDIR)/whisper/lib
+ifeq ($(OS),Windows_NT)
+	export CGO_CFLAGS=-I$(CURDIR)/whisper/include
+	export CGO_LDFLAGS=-L$(CURDIR)/whisper/lib/win
+    export CC=gcc.exe
+    export CXX=g++.exe
+    CUR_PATH := $(PATH)
+    export PATH=$(CURDIR)/whisper/lib/win:$(CUR_PATH)
+else
+	export CGO_CFLAGS=-I$(CURDIR)/whisper/include
+	export CGO_LDFLAGS=-L$(CURDIR)/whisper/lib
+endif
 
 # The mp4 in TestSrc is used from https://www.youtube.com/watch?v=_z6ZIwKu1bY
 export FFMPEG_TEST_DIR=$(CURDIR)/TestSrc
@@ -23,5 +32,5 @@ clean: clean-backend clean-frontend
 
 test:
 	go test -v ./...
-	rm -rf $(CURDIR)/api/data/temp
-	rm -rf $(CURDIR)/api/data/media
+	rm -rf $(CURDIR)/data/temp
+	rm -rf $(CURDIR)/data/media

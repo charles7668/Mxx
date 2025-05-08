@@ -1,6 +1,7 @@
 package converter
 
 import (
+	_ "Mxx/tests_init"
 	"os"
 	"path/filepath"
 	"testing"

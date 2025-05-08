@@ -1,6 +1,7 @@
 package transcription
 
 import (
+	_ "Mxx/tests_init"
 	"Mxx/whisper/downloader"
 	"context"
 	"github.com/ggerganov/whisper.cpp/bindings/go/pkg/whisper"

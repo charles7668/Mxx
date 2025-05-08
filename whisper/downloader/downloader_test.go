@@ -1,6 +1,7 @@
 package downloader
 
 import (
+	_ "Mxx/tests_init"
 	"context"
 	"errors"
 	"os"

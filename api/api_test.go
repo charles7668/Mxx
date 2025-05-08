@@ -4,6 +4,7 @@ import (
 	"Mxx/api/media"
 	"Mxx/api/models"
 	"Mxx/api/session"
+	_ "Mxx/tests_init"
 	"bytes"
 	"encoding/json"
 	"mime/multipart"
@@ -186,7 +187,7 @@ func TestGetSubtitlesRoute(t *testing.T) {
 
 	// Add a media path to the manager
 	manager := media.GetMediaManager()
-	manager.SetMediaPath(sessionId, "../TestSrc/test_ffmpeg.mp4")
+	manager.SetMediaPath(sessionId, "./TestSrc/test_ffmpeg.mp4")
 	req, _ = http.NewRequest("POST", "/medias/subtitles", bytes.NewBuffer(bodyBytes))
 	req.Header.Set("X-Session-Id", sessionId)
 	w = httptest.NewRecorder()

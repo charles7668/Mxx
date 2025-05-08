@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 )
 
 type M3U8Converter struct {
@@ -20,7 +21,11 @@ func (converter *M3U8Converter) Convert(input, output string) error {
 	}
 	ffmpegPath := converter.ffmpegPath
 	if converter.ffmpegPath == "" {
-		ffmpegPath = "ffmpeg"
+		if runtime.GOOS == "windows" {
+			ffmpegPath = "./ffmpeg"
+		} else {
+			ffmpegPath = "ffmpeg"
+		}
 	}
 
 	cmd := exec.Command(

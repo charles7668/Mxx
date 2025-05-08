@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 )
 
 type AudioConverter struct {
@@ -20,7 +21,11 @@ func (converter *AudioConverter) Convert(input, output string) error {
 	}
 	ffmpegPath := converter.ffmpegPath
 	if converter.ffmpegPath == "" {
-		ffmpegPath = "ffmpeg"
+		if runtime.GOOS == "windows" {
+			ffmpegPath = "./ffmpeg"
+		} else {
+			ffmpegPath = "ffmpeg"
+		}
 	}
 
 	cmd := exec.Command(ffmpegPath, "-y", "-i", input, "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", output)
