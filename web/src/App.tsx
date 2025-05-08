@@ -132,11 +132,11 @@ function App() {
         if (state.idle) {
           tryCount++;
           if (tryCount >= maxTryCount) {
+            clearInterval(intervalId);
             if (waitingSubtitle) {
               await getSubtitle();
               setWaitingSubtitle(false);
             }
-            clearInterval(intervalId);
             setNeedRefreshTaskStatus(false);
           }
           return;
