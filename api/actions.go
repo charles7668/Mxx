@@ -199,7 +199,7 @@ func generateMediaSubtitles(c *gin.Context) {
 		}
 		<-downloadCtx.Done()
 		if downloadErr != nil {
-			logger.Sugar().Errorf("download error : %s", err.Error())
+			logger.Sugar().Errorf("download error : %s", downloadErr.Error())
 			task.FailedTask(sessionId, downloadErr)
 			return
 		}
