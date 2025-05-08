@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"Mxx/api"
+	"Mxx/api/graceful"
 	"Mxx/ffmpeg/converter"
 	"Mxx/whisper/downloader"
 	"Mxx/whisper/transcription"
@@ -17,11 +18,18 @@ import (
 func Run(options RunOptions) error {
 	if options.webMode {
 		router := api.GetApiRouter()
-		err := router.Run(":8080")
-		if err != nil {
-			return fmt.Errorf("failed to start web server: %v", err)
-		}
-		return nil
+		var routeErr error
+		routeCtx, routeCtxCancel := context.WithCancel(graceful.BackgroundContext)
+		routeErr = nil
+		go func() {
+			err := router.Run(":8080")
+			if err != nil {
+				routeErr = fmt.Errorf("failed to start web server: %v", err)
+			}
+			routeCtxCancel()
+		}()
+		<-routeCtx.Done()
+		return routeErr
 	}
 	tempUUID, err := uuid.NewUUID()
 	if err != nil {

@@ -10,5 +10,5 @@ import (
 var BackgroundContext context.Context
 
 func InitContext() {
-	BackgroundContext, _ = signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	BackgroundContext, _ = signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM|syscall.SIGINT|syscall.SIGQUIT)
 }
