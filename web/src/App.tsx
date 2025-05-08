@@ -199,7 +199,7 @@ function App() {
 
           <HStack>
             <Button onClick={copyButtonHandler}>Copy</Button>
-            <Button onClick={downloadASSClickHandler}>Downlaod ASS</Button>
+            <Button onClick={downloadASSClickHandler}>Download ASS</Button>
           </HStack>
 
           <Box
