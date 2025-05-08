@@ -332,8 +332,11 @@ func getPreviewMediaList(c *gin.Context) {
 	}
 	mediaManager := media.GetMediaManager()
 	mediaPath := mediaManager.GetMediaPath(token)
+	mediaPath, _ = filepath.Abs(mediaPath)
+	mediaPath = strings.ReplaceAll(mediaPath, "\\", "/")
 	mediaDir := path.Dir(mediaPath)
 	m3u8Path := filepath.Join(mediaDir, "output.m3u8")
+	m3u8Path = strings.ReplaceAll(m3u8Path, "\\", "/")
 	if _, err := os.Stat(m3u8Path); os.IsNotExist(err) {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{
 			Status: http.StatusNotFound,
@@ -357,8 +360,10 @@ func getPreviewMediaFile(c *gin.Context) {
 	}
 	mediaManager := media.GetMediaManager()
 	mediaPath := mediaManager.GetMediaPath(token)
+	mediaPath = strings.ReplaceAll(mediaPath, "\\", "/")
 	mediaDir := path.Dir(mediaPath)
 	tsPath := filepath.Join(mediaDir, requestFile)
+	tsPath = strings.ReplaceAll(tsPath, "\\", "/")
 	if _, err := os.Stat(tsPath); os.IsNotExist(err) {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{
 			Status: http.StatusNotFound,
