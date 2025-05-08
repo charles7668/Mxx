@@ -2,8 +2,6 @@
 
 🎬 **Mxx** is a user-friendly video subtitle generation tool that uses OpenAI's Whisper model to detect audio content and automatically generate subtitles.
 
-> ⚠️ Currently supports **Linux systems only**
-
 ## ✨ Features
 
 - 🗣️ **Automatic Speech Recognition (ASR)**  
@@ -17,7 +15,8 @@
 
 ## 🚀 How to Use
 
-> **Note:** Ensure that `ffmpeg` is installed on your system before using Mxx.
+> **Note for Linux:** Make sure `ffmpeg` is installed and available in your system path.  
+> **Note for Windows:** Place `ffmpeg.exe` in the same directory as `Mxx.exe`.
 
 ### 🌐 Web Interface
 
@@ -41,14 +40,13 @@
    ```
 
 This will start a local development server.
-By default:
 
-- The **frontend runs on port `5173`**
-- The **backend API runs on port `8080`**
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8080`
 
 ### 🧾 Command-Line Interface
 
-To see available CLI options:
+To view available CLI options:
 
 ```bash
 mxx --help
@@ -58,6 +56,8 @@ Use CLI commands to process video files directly from the terminal.
 
 ## 🔧 Build Guide
 
+> **Note for Windows:** You need to install **MinGW** and ensure `make` and the required toolchains are available in your system PATH.
+
 To build the project from source:
 
 ```bash
@@ -65,4 +65,4 @@ make build
 ```
 
 - The backend executable will be generated as: `Mxx`
-- The frontend static files will be built into the `dist/` folder
+- The frontend static files will be output to the `dist/` folder
