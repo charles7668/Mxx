@@ -50,8 +50,11 @@ func (m *Manager) GetSegments(sessionId string) []Segment {
 }
 
 func (m *Manager) Exist(sessionId string) bool {
-	_, ok := m.cache[sessionId]
-	return ok
+	segments, ok := m.cache[sessionId]
+	if !ok || len(segments) == 0 {
+		return false
+	}
+	return true
 }
 
 func duratiionToASSTimeFormat(d *time.Duration) string {

@@ -113,6 +113,9 @@ func mediaUpload(c *gin.Context) {
 		return
 	}
 
+	subtitleManager := subtitle.GetManager()
+	subtitleManager.Clear(sessionId)
+
 	c.JSON(http.StatusOK, &models.FileUploadResponse{
 		Status: http.StatusOK,
 		File:   file.Filename,
