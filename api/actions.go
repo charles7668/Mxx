@@ -238,12 +238,36 @@ func generateMediaSubtitles(c *gin.Context) {
 		whisperContext, whisperCancelFunc := context.WithCancel(graceful.BackgroundContext)
 		whisperOptions := transcription.CreateOptions()
 		whisperOptions.SegmentCallback = func(segment whisper.Segment) {
-			store := subtitle.Segment{
+			trim := strings.TrimSpace(segment.Text)
+			if len(trim) == 0 {
+				return
+			}
+			last := subtitleManager.Last(sessionId)
+			if last == nil {
+				store := subtitle.Segment{
+					StartTime: segment.Start,
+					EndTime:   segment.End,
+					Text:      segment.Text + " ",
+				}
+				subtitleManager.Add(sessionId, store)
+				return
+			}
+			newSegment, merged := subtitle.TryMerge(last, &subtitle.Segment{
 				StartTime: segment.Start,
 				EndTime:   segment.End,
 				Text:      segment.Text,
+			})
+			if merged {
+				last.StartTime = newSegment.StartTime
+				last.EndTime = newSegment.EndTime
+				last.Text = newSegment.Text
+				return
 			}
-			subtitleManager.Add(sessionId, store)
+			subtitleManager.Add(sessionId, subtitle.Segment{
+				StartTime: segment.Start,
+				EndTime:   segment.End,
+				Text:      segment.Text,
+			})
 		}
 		err = transcription.Transcribe(whisperContext, audioTarget, filepath.Join(modelPath, body.Model), whisperOptions)
 		if err != nil {
@@ -323,8 +347,8 @@ func getASSFormatSubtitle(c *gin.Context) {
 }
 
 func getPreviewMediaList(c *gin.Context) {
-	token := c.Param("token")
-	if token == "" {
+	sessionId := c.GetString(constant.SessionIdCtxKey)
+	if sessionId == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Status: http.StatusBadRequest,
 			Error:  "Token is required",
@@ -332,7 +356,7 @@ func getPreviewMediaList(c *gin.Context) {
 		return
 	}
 	mediaManager := media.GetMediaManager()
-	mediaPath := mediaManager.GetMediaPath(token)
+	mediaPath := mediaManager.GetMediaPath(sessionId)
 	mediaPath, _ = filepath.Abs(mediaPath)
 	mediaPath = strings.ReplaceAll(mediaPath, "\\", "/")
 	mediaDir := path.Dir(mediaPath)
@@ -350,9 +374,9 @@ func getPreviewMediaList(c *gin.Context) {
 }
 
 func getPreviewMediaFile(c *gin.Context) {
-	token := c.Param("token")
+	sessionId := c.GetString(constant.SessionIdCtxKey)
 	requestFile := c.Param("segment")
-	if token == "" {
+	if sessionId == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Status: http.StatusBadRequest,
 			Error:  "Token is required",
@@ -360,7 +384,7 @@ func getPreviewMediaFile(c *gin.Context) {
 		return
 	}
 	mediaManager := media.GetMediaManager()
-	mediaPath := mediaManager.GetMediaPath(token)
+	mediaPath := mediaManager.GetMediaPath(sessionId)
 	mediaPath = strings.ReplaceAll(mediaPath, "\\", "/")
 	mediaDir := path.Dir(mediaPath)
 	tsPath := filepath.Join(mediaDir, requestFile)

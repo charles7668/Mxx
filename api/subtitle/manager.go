@@ -89,3 +89,13 @@ func (m *Manager) ToASS(sessionId string) string {
 	result := builder.String()
 	return result
 }
+
+func (m *Manager) Last(sessionId string) *Segment {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	segments, ok := m.cache[sessionId]
+	if !ok || len(segments) == 0 {
+		return nil
+	}
+	return &segments[len(segments)-1]
+}

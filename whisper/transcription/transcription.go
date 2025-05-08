@@ -99,5 +99,7 @@ func getWhisperContext(model whisper.Model, options TranscribeOptions) (whisper.
 	if model.IsMultilingual() && whisperContext.SetLanguage(options.Language) != nil {
 		return nil, errors.New("failed to set language: " + options.Language)
 	}
+	whisperContext.SetMaxSegmentLength(1)
+	whisperContext.SetTokenTimestamps(true)
 	return whisperContext, nil
 }
