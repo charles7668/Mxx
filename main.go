@@ -7,6 +7,8 @@ import (
 	"embed"
 	"errors"
 	"flag"
+	"fmt"
+	"go.uber.org/zap"
 	"os"
 )
 
@@ -24,7 +26,12 @@ func main() {
 		os.Exit(1)
 	}
 	logger := log.GetApiLogger()
-	defer logger.Sync()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			fmt.Println("Failed to sync logger")
+		}
+	}(logger)
 	api.StaticFS = webDist
 	err = cmd.Run(options)
 	if err != nil {

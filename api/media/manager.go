@@ -73,3 +73,8 @@ func GetMediaManager() *Manager {
 	}
 	return mediaManager
 }
+
+func RemoveDiskPath(path string) error {
+	err := os.RemoveAll(path)
+	return err
+}

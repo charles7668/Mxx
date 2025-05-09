@@ -56,7 +56,9 @@ func Run(options RunOptions) error {
 	// try to convert the media file to wav
 	audioConverter := converter.CreateAudioConverter("ffmpeg")
 	err = audioConverter.Convert(options.inputFile, tempFile)
-	defer os.RemoveAll(tempPath)
+	defer func(path string) {
+		_ = os.RemoveAll(path)
+	}(tempPath)
 	if err != nil {
 		return fmt.Errorf("failed to convert audio file %s : %v", options.inputFile, err)
 	}
@@ -119,7 +121,9 @@ func Run(options RunOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create output file %s : %v", options.outputFile, err)
 	}
-	defer outputFile.Close()
+	defer func(outputFile *os.File) {
+		_ = outputFile.Close()
+	}(outputFile)
 	for _, segment := range buffer {
 		_, err := outputFile.WriteString(segment + "\n")
 		if err != nil {

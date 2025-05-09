@@ -90,7 +90,11 @@ func mediaUpload(c *gin.Context) {
 
 	targetPath := filepath.Join(storeDir, file.Filename)
 	logger.Sugar().Infof("try save file to %s", targetPath)
+	mediaManager := media.GetMediaManager()
 	if err := c.SaveUploadedFile(file, targetPath); err != nil {
+		go func() {
+			_ = media.RemoveDiskPath(targetPath)
+		}()
 		logger.Sugar().Errorf("failed to save file : %s , err : %s", targetPath, err.Error())
 		c.JSON(http.StatusInternalServerError, &models.ErrorResponse{
 			Status: http.StatusInternalServerError,
@@ -98,7 +102,6 @@ func mediaUpload(c *gin.Context) {
 		})
 		return
 	}
-	mediaManager := media.GetMediaManager()
 	mediaManager.SetMediaPath(sessionId, targetPath)
 
 	m3u8Converter := converter.CreateM3U8Converter("")
