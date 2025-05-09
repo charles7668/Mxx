@@ -18,7 +18,7 @@ import (
 )
 
 func TestGetSessionRoute(t *testing.T) {
-	router := GetApiRouter()
+	router := GetApiRouter("")
 
 	// Simulate a GET request to /session
 	req, _ := http.NewRequest("GET", "/session", nil)
@@ -47,7 +47,7 @@ func TestUploadRoute(t *testing.T) {
 		t.Fatalf("Please set the FFMPEG_TEST_DIR environment variable to the test directory")
 	}
 	inputFile := filepath.Join(testDir, "test_ffmpeg.mp4")
-	router := GetApiRouter()
+	router := GetApiRouter("")
 
 	// Simulate a POST request to /upload without a session ID
 	req, _ := http.NewRequest("POST", "/medias", nil)
@@ -162,7 +162,7 @@ func TestUploadRoute(t *testing.T) {
 }
 
 func TestGetSubtitlesRoute(t *testing.T) {
-	router := GetApiRouter()
+	router := GetApiRouter("")
 
 	// Simulate a POST request to /subtitles with media not uploaded
 	sessionId := session.GenerateSessionId()
