@@ -16,7 +16,7 @@ import (
 )
 
 func Run(options RunOptions) error {
-	if options.webMode {
+	if options.apiMode {
 		router := api.GetApiRouter()
 		var routeErr error
 		routeCtx, routeCtxCancel := context.WithCancel(graceful.BackgroundContext)

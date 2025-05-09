@@ -13,21 +13,21 @@ func ParseArgs(args []string) (RunOptions, error) {
 	fs.StringVar(outputFile, "output", "", "Path to the output file (alias for -o)")
 	model := fs.String("m", "tiny.en", "Whisper model name , you can see all support list in https://github.com/ggml-org/whisper.cpp/blob/master/models/README.md")
 	fs.StringVar(model, "model", "tiny.en", "Whisper model name (alias for -m)")
-	webMode := fs.Bool("web", false, "web mode with interface")
+	apiMode := fs.Bool("api", false, "launch api server")
 
 	err := fs.Parse(args[1:])
 	if err != nil {
 		return RunOptions{}, err
 	}
 
-	if *inputFile == "" && !*webMode {
-		return RunOptions{}, errors.New("missing required flag: -input")
+	if *inputFile == "" && !*apiMode {
+		return RunOptions{}, errors.New("missing required flag: --input/-i or --api")
 	}
 
 	return RunOptions{
 		inputFile:  *inputFile,
 		outputFile: *outputFile,
 		model:      *model,
-		webMode:    *webMode,
+		apiMode:    *apiMode,
 	}, nil
 }
