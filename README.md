@@ -56,7 +56,22 @@ Use CLI commands to process video files directly from the terminal.
 
 ## 🔧 Build Guide
 
-> **Note for Windows:** You need to install **MinGW** and ensure `make` and the required toolchains are available in your system PATH.
+> 💡 **Note:** It is recommended to compile the Whisper library yourself to enable more features such as GPU acceleration.  
+> Otherwise, the default prebuilt version in the `whisper/lib` folder will be used (GPU is **not enabled** by default).
+
+### 🪟 Notes for Windows
+
+- The prebuilt Whisper library for Windows is located at:  
+  `whisper/lib/win`
+
+- If you encounter the error `0xc0000139` during runtime,  
+  make sure to place the correct `libstdc++-6.dll` into the `whisper/lib/win` folder.
+
+- You need to install **MinGW**, and ensure `make` and the required toolchains are available in your system `PATH`.
+
+---
+
+### 🛠️ Build Command
 
 To build the project from source:
 
