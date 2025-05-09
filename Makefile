@@ -19,12 +19,15 @@ build-backend:
 	go build .
 build-frontend:
 	cd web && npm install && npm run build
-build: build-backend build-frontend
+build: build-frontend build-backend
 
 .PHONY: run-api run
 # use this command with make run ARGS="put your args here"
 run-api:
 	go run main.go --api
+# this command will run the web server with the frontend
+run-web:
+	go run main.go --web
 # use this command with make run ARGS="put your args here"
 run:
 	go run main.go $(ARGS)

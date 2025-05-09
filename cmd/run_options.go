@@ -5,4 +5,5 @@ type RunOptions struct {
 	outputFile string
 	model      string
 	apiMode    bool
+	webMode    bool
 }

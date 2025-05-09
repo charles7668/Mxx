@@ -1,12 +1,17 @@
 package main
 
 import (
+	"Mxx/api"
 	"Mxx/api/log"
 	"Mxx/cmd"
+	"embed"
 	"errors"
 	"flag"
 	"os"
 )
+
+//go:embed web/dist/*
+var webDist embed.FS
 
 func main() {
 	args := os.Args
@@ -20,6 +25,7 @@ func main() {
 	}
 	logger := log.GetApiLogger()
 	defer logger.Sync()
+	api.StaticFS = webDist
 	err = cmd.Run(options)
 	if err != nil {
 		_, _ = os.Stderr.WriteString(err.Error() + "\n")

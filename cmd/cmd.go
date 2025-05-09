@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ggerganov/whisper.cpp/bindings/go/pkg/whisper"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"os"
 	"path/filepath"
@@ -16,12 +17,18 @@ import (
 )
 
 func Run(options RunOptions) error {
-	if options.apiMode {
-		router := api.GetApiRouter()
+	if options.apiMode || options.webMode {
+		var router *gin.Engine
+		if options.apiMode {
+			router = api.GetApiRouter("")
+		} else {
+			router = api.GetWebRouter()
+		}
 		var routeErr error
 		routeCtx, routeCtxCancel := context.WithCancel(graceful.BackgroundContext)
 		routeErr = nil
 		go func() {
+			fmt.Printf("🚀 Server running at: http://localhost:%d\n", 8080)
 			err := router.Run(":8080")
 			if err != nil {
 				routeErr = fmt.Errorf("failed to start web server: %v", err)
