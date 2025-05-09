@@ -10,7 +10,7 @@ import (
 	"Mxx/api/session"
 	"Mxx/api/subtitle"
 	"Mxx/api/task"
-	"Mxx/ffmpeg/converter"
+	"Mxx/ffmpeg"
 	"Mxx/whisper/downloader"
 	"Mxx/whisper/transcription"
 	"context"
@@ -104,7 +104,8 @@ func mediaUpload(c *gin.Context) {
 	}
 	mediaManager.SetMediaPath(sessionId, targetPath)
 
-	m3u8Converter := converter.CreateM3U8Converter("")
+	ffmpegInstance := getFFMpegFromContext(c)
+	m3u8Converter := ffmpegInstance.CreateConverter(ffmpeg.M3U8Converter)
 	m3u8Target := filepath.Join(storeDir, "output.m3u8")
 	err = m3u8Converter.Convert(targetPath, m3u8Target)
 	if err != nil {
@@ -214,7 +215,8 @@ func generateMediaSubtitles(c *gin.Context) {
 		task.StartTask(sessionId, task.State{
 			Task: "converting file to wav",
 		})
-		audioConverter := converter.CreateAudioConverter("")
+		ffmpegInstance := getFFMpegFromContext(c)
+		audioConverter := ffmpegInstance.CreateConverter(ffmpeg.AudioConverter)
 		mediaManager = media.GetMediaManager()
 		inputFilePath := mediaManager.GetMediaPath(sessionId)
 		tempDir := apiConfig.TempStorePath
@@ -414,4 +416,10 @@ func getLoggerFromContext(c *gin.Context) *zap.Logger {
 		logger = log.GetInnerLogger()
 	}
 	return logger
+}
+
+func getFFMpegFromContext(c *gin.Context) *ffmpeg.FFMpeg {
+	ffmpegObj, _ := c.Get(constant.FFMpegCtxKey)
+	ffmpegInstance := ffmpegObj.(*ffmpeg.FFMpeg)
+	return ffmpegInstance
 }

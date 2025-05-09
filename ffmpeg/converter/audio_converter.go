@@ -11,7 +11,7 @@ type AudioConverter struct {
 	ffmpegPath string
 }
 
-func CreateAudioConverter(ffmpegPath string) *AudioConverter {
+func CreateAudioConverter(ffmpegPath string) Converter {
 	return &AudioConverter{ffmpegPath: ffmpegPath}
 }
 

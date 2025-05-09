@@ -35,6 +35,7 @@ func GetApiRouter(prefix string) *gin.Engine {
 	}))
 	apiRouterGroup.Use(ginzap.RecoveryWithZap(logger, true))
 	apiRouterGroup.Use(prepareLogger)
+	apiRouterGroup.Use(PrepareDefaultContext)
 	apiRouterGroup.GET("/session", generateSessionId)
 	medias := apiRouterGroup.Group("/medias")
 	{

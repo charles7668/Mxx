@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 func TestTranscription(t *testing.T) {
@@ -40,7 +39,7 @@ func TestTranscription(t *testing.T) {
 		t.Logf("transcription progress: %d", progress)
 	}
 	segmentCallback := func(segment whisper.Segment) {
-		t.Logf("segment: [%6s -> %6s] %s", segment.Start.Truncate(time.Millisecond), segment.End.Truncate(time.Millisecond), segment.Text)
+		//t.Logf("segment: [%6s -> %6s] %s", segment.Start.Truncate(time.Millisecond), segment.End.Truncate(time.Millisecond), segment.Text)
 	}
 	transcribeOptions := CreateOptions()
 	transcribeOptions.ProgressCallback = transcribeProgressCallback

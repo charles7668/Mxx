@@ -5,6 +5,7 @@ import (
 	"Mxx/api/log"
 	"Mxx/api/media"
 	"Mxx/api/session"
+	"Mxx/contexts"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
@@ -49,4 +50,9 @@ func prepareLoggerWithSessionField(c *gin.Context) {
 	logger := log.GetInnerLogger()
 	newLogger := logger.With(zap.String("sessionId", sessionId))
 	c.Set(constant.LoggerCtxKey, newLogger)
+}
+
+func PrepareDefaultContext(c *gin.Context) {
+	// prepare ffmpeg instance
+	c.Set(constant.FFMpegCtxKey, contexts.FFMpegInstance)
 }

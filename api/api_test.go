@@ -4,6 +4,7 @@ import (
 	"Mxx/api/media"
 	"Mxx/api/models"
 	"Mxx/api/session"
+	"Mxx/contexts"
 	_ "Mxx/tests_init"
 	"bytes"
 	"encoding/json"
@@ -12,10 +13,23 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
 )
+
+func init() {
+	prepareContexts()
+}
+
+func prepareContexts() {
+	ffmpegPath := "ffmpeg"
+	if runtime.GOOS == "windows" {
+		ffmpegPath = "./ffmpeg.exe"
+	}
+	contexts.InitContexts(ffmpegPath)
+}
 
 func TestGetSessionRoute(t *testing.T) {
 	router := GetApiRouter("")

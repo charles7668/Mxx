@@ -11,7 +11,7 @@ type M3U8Converter struct {
 	ffmpegPath string
 }
 
-func CreateM3U8Converter(ffmpegPath string) *M3U8Converter {
+func CreateM3U8Converter(ffmpegPath string) Converter {
 	return &M3U8Converter{ffmpegPath: ffmpegPath}
 }
 

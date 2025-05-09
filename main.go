@@ -4,12 +4,14 @@ import (
 	"Mxx/api"
 	"Mxx/api/log"
 	"Mxx/cmd"
+	"Mxx/contexts"
 	"embed"
 	"errors"
 	"flag"
 	"fmt"
 	"go.uber.org/zap"
 	"os"
+	"runtime"
 )
 
 //go:embed web/dist/*
@@ -33,6 +35,14 @@ func main() {
 		}
 	}(logger)
 	api.StaticFS = webDist
+
+	// init context variables
+	ffmpegPath := "ffmpeg"
+	if runtime.GOOS == "windows" {
+		ffmpegPath = "./ffmpeg.exe"
+	}
+	contexts.InitContexts(ffmpegPath)
+
 	err = cmd.Run(options)
 	if err != nil {
 		_, _ = os.Stderr.WriteString(err.Error() + "\n")
