@@ -3,6 +3,7 @@ package cmd
 import (
 	"Mxx/api"
 	"Mxx/api/graceful"
+	"Mxx/desktop"
 	"Mxx/ffmpeg/converter"
 	"Mxx/whisper/downloader"
 	"Mxx/whisper/transcription"
@@ -19,22 +20,27 @@ import (
 func Run(options RunOptions) error {
 	if options.apiMode || options.webMode {
 		var router *gin.Engine
-		if options.apiMode {
-			router = api.GetApiRouter("")
-		} else {
+		if options.webMode {
 			router = api.GetWebRouter()
+		} else {
+			router = api.GetApiRouter("")
 		}
 		var routeErr error
 		routeCtx, routeCtxCancel := context.WithCancel(graceful.BackgroundContext)
 		routeErr = nil
+		hostAddress := "http://localhost:8080"
 		go func() {
-			fmt.Printf("🚀 Server running at: http://localhost:%d\n", 8080)
+			fmt.Printf("🚀 Server running at: %s\n", hostAddress)
 			err := router.Run(":8080")
 			if err != nil {
 				routeErr = fmt.Errorf("failed to start web server: %v", err)
 			}
 			routeCtxCancel()
 		}()
+
+		if desktop.IsDesktop() {
+			desktop.Launch(hostAddress)
+		}
 		<-routeCtx.Done()
 		return routeErr
 	}

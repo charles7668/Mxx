@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"Mxx/desktop"
 	"errors"
 	"flag"
 )
@@ -19,6 +20,10 @@ func ParseArgs(args []string) (RunOptions, error) {
 	err := fs.Parse(args[1:])
 	if err != nil {
 		return RunOptions{}, err
+	}
+
+	if desktop.IsDesktop() {
+		*webMode = true
 	}
 
 	if *inputFile == "" && !*apiMode && !*webMode {
