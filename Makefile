@@ -14,22 +14,29 @@ endif
 export FFMPEG_TEST_DIR=$(CURDIR)/TestSrc
 export WHISPER_TEST_DIR=$(CURDIR)/TestSrc
 
+.PHONY: build build-backend build-frontend
 build-backend:
 	go build .
 build-frontend:
 	cd web && npm install && npm run build
 build: build-backend build-frontend
 
+.PHONY: run-api run
 # use this command with make run ARGS="put your args here"
 run-api:
+	go run main.go --api
+# use this command with make run ARGS="put your args here"
+run:
 	go run main.go $(ARGS)
 
+.PHONY: clean-backend clean-frontend clean
 clean-backend:
 	go clean
 clean-frontend:
 	rm -rf $(CURDIR)/dist
 clean: clean-backend clean-frontend
 
+.PHONY: test
 test:
 	go test -v ./...
 	rm -rf $(CURDIR)/data/temp
