@@ -20,7 +20,11 @@ func GetApiRouter() *gin.Engine {
 		AllowCredentials: true,
 	}))
 	logger := log.GetApiLogger()
-	router.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	router.Use(ginzap.GinzapWithConfig(logger, &ginzap.Config{
+		TimeFormat: time.RFC3339,
+		UTC:        true,
+		SkipPaths:  []string{"/medias/task"},
+	}))
 	router.Use(ginzap.RecoveryWithZap(logger, true))
 	router.Use(prepareLogger)
 	router.GET("/session", generateSessionId)
