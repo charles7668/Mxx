@@ -20,11 +20,31 @@
 
 ### 🌐 Web Interface
 
-1. **Start the backend API:**
+You can start the web interface in two ways:
+
+1. **Double-click (Windows only):**  
+   Simply double-click the `Mxx.exe` file to launch the built-in web server.
+
+2. **Via command-line:**
 
    ```bash
-   mxx --web
+   Mxx --web
    ```
+
+This will start both the front-end and backend API on the same server.
+
+**By default:**
+
+- Frontend: [`http://localhost:8080`](http://localhost:8080)
+- Backend API: [`http://localhost:8080/api`](http://localhost:8080/api)
+
+### 🌐 API Server and Front-End (Separate Deployment)
+
+1. **Start the backend API:**
+
+```bash
+Mxx --api
+```
 
 2. **Create a `.env` file inside the `web/` directory with the following content:**
 
