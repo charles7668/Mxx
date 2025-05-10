@@ -70,6 +70,17 @@ func GetWebRouter() *gin.Engine {
 	}
 	router.NoRoute(func(c *gin.Context) {
 		if !strings.HasPrefix(c.Request.URL.Path, "/api/") {
+			if strings.HasSuffix(c.Request.URL.Path, ".woff2") && !strings.HasPrefix(c.Request.URL.Path, "/fonts/") {
+				fontsFs, err := fs.Sub(StaticFS, "web/dist/fonts")
+				if err != nil {
+					c.Status(http.StatusNotFound)
+					return
+				}
+				fileServer := http.FileServerFS(fontsFs)
+				c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/")
+				fileServer.ServeHTTP(c.Writer, c.Request)
+				return
+			}
 			fileServer := http.FileServerFS(fsys)
 			c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/")
 			fileServer.ServeHTTP(c.Writer, c.Request)

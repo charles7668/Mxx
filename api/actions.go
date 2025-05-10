@@ -11,6 +11,7 @@ import (
 	"Mxx/api/subtitle"
 	"Mxx/api/task"
 	"Mxx/ffmpeg"
+	ffmpegModel "Mxx/ffmpeg/models"
 	"Mxx/whisper/downloader"
 	"Mxx/whisper/transcription"
 	"context"
@@ -22,6 +23,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -215,10 +217,6 @@ func generateMediaSubtitles(c *gin.Context) {
 		task.StartTask(sessionId, task.State{
 			Task: "converting file to wav",
 		})
-		ffmpegInstance := getFFMpegFromContext(c)
-		audioConverter := ffmpegInstance.CreateConverter(ffmpeg.AudioConverter)
-		mediaManager = media.GetMediaManager()
-		inputFilePath := mediaManager.GetMediaPath(sessionId)
 		tempDir := apiConfig.TempStorePath
 		tempUUID := filepath.Join(tempDir, sessionId)
 		err = os.MkdirAll(tempUUID, os.ModePerm)
@@ -227,10 +225,27 @@ func generateMediaSubtitles(c *gin.Context) {
 			task.FailedTask(sessionId, err)
 			return
 		}
-		audioTarget := filepath.Join(tempUUID, "output.wav")
-		err = audioConverter.Convert(inputFilePath, audioTarget)
+		defer func(path string) {
+			_ = os.RemoveAll(path)
+		}(tempUUID)
+		ffmpegInstance := getFFMpegFromContext(c)
+		inputFilePath := mediaManager.GetMediaPath(sessionId)
+		silentAnalyzeOptions := ffmpegModel.GetDefaultSilentAnalyzeOptions(inputFilePath)
+		silentAnalyzeOptions.NoiseDB = -20
+		silentSegments, err := ffmpegInstance.GetSilentSegments(silentAnalyzeOptions)
 		if err != nil {
-			logger.Sugar().Errorf("failed to convert file: %s, err: %s", inputFilePath, err)
+			logger.Sugar().Errorf("failed to get silent segments err: %s", err)
+			task.FailedTask(sessionId, err)
+			c.JSON(http.StatusInternalServerError, &models.ErrorResponse{
+				Status: http.StatusInternalServerError,
+				Error:  "Failed to get silent segments",
+			})
+			return
+		}
+		audioTarget := filepath.Join(tempUUID, "output.wav")
+		cutSegments, err := ffmpegInstance.SplitBySilentSegmentsToAudio(silentSegments, inputFilePath, tempUUID)
+		if err != nil {
+			logger.Sugar().Errorf("failed to split audio: %s, err: %s", inputFilePath, err)
 			task.FailedTask(sessionId, err)
 			return
 		}
@@ -242,53 +257,103 @@ func generateMediaSubtitles(c *gin.Context) {
 		logger.Info("start generate subtitles by whisper")
 		subtitleManager := subtitle.GetManager()
 		subtitleManager.Clear(sessionId)
-		var whisperErr error = nil
-		whisperContext, whisperCancelFunc := context.WithCancel(graceful.BackgroundContext)
 		whisperOptions := transcription.CreateOptions()
-		whisperOptions.SegmentCallback = func(segment whisper.Segment) {
-			trim := strings.TrimSpace(segment.Text)
-			if len(trim) == 0 {
-				return
-			}
-			last := subtitleManager.Last(sessionId)
-			if last == nil {
-				store := subtitle.Segment{
+		for i, cut := range cutSegments {
+			whisperContext, whisperCancelFunc := context.WithCancel(graceful.BackgroundContext)
+			audioFile := filepath.Join(tempUUID, "silent_"+strconv.Itoa(i+1)+".wav")
+			whisperOptions.SegmentCallback = func(segment whisper.Segment) {
+				segment.Start += cut.Start
+				segment.End += cut.Start
+				trim := strings.TrimSpace(segment.Text)
+				if len(trim) == 0 {
+					return
+				}
+				last := subtitleManager.Last(sessionId)
+				if last == nil {
+					store := subtitle.Segment{
+						StartTime: segment.Start,
+						EndTime:   segment.End,
+						Text:      segment.Text + " ",
+					}
+					subtitleManager.Add(sessionId, store)
+					return
+				}
+				newSegment, merged := subtitle.TryMerge(last, &subtitle.Segment{
 					StartTime: segment.Start,
 					EndTime:   segment.End,
-					Text:      segment.Text + " ",
+					Text:      segment.Text,
+				})
+				if merged {
+					last.StartTime = newSegment.StartTime
+					last.EndTime = newSegment.EndTime
+					last.Text = newSegment.Text
+					return
 				}
-				subtitleManager.Add(sessionId, store)
-				return
+				subtitleManager.Add(sessionId, subtitle.Segment{
+					StartTime: segment.Start,
+					EndTime:   segment.End,
+					Text:      segment.Text,
+				})
 			}
-			newSegment, merged := subtitle.TryMerge(last, &subtitle.Segment{
-				StartTime: segment.Start,
-				EndTime:   segment.End,
-				Text:      segment.Text,
-			})
-			if merged {
-				last.StartTime = newSegment.StartTime
-				last.EndTime = newSegment.EndTime
-				last.Text = newSegment.Text
-				return
-			}
-			subtitleManager.Add(sessionId, subtitle.Segment{
-				StartTime: segment.Start,
-				EndTime:   segment.End,
-				Text:      segment.Text,
-			})
-		}
-		err = transcription.Transcribe(whisperContext, audioTarget, filepath.Join(modelPath, body.Model), whisperOptions)
-		if err != nil {
+			err = transcription.Transcribe(whisperContext, audioFile, filepath.Join(modelPath, body.Model), whisperOptions)
 			whisperCancelFunc()
-			logger.Sugar().Errorf("failed to transcribe file: %s, err: %s", audioTarget, err)
-			task.FailedTask(sessionId, err)
-			return
+			if err != nil {
+				logger.Sugar().Errorf("failed to transcribe file: %s, err: %s", audioTarget, err)
+				task.FailedTask(sessionId, err)
+				return
+			}
+			<-whisperContext.Done()
 		}
-		whisperCancelFunc()
-		if whisperErr != nil {
-			logger.Sugar().Errorf("failed to transcribe file: %s, err: %s", audioTarget, whisperErr)
-			task.FailedTask(sessionId, whisperErr)
-			return
+		{
+			// if last segment exist
+			audioFile := filepath.Join(tempUUID, "silent_"+strconv.Itoa(len(cutSegments)+1)+".wav")
+			if stat, err := os.Stat(audioFile); os.IsExist(err) || !stat.IsDir() {
+				whisperContext, whisperCancelFunc := context.WithCancel(graceful.BackgroundContext)
+				cut := cutSegments[len(cutSegments)-1]
+				whisperOptions.SegmentCallback = func(segment whisper.Segment) {
+					segment.Start += cut.End
+					segment.End += cut.End
+					trim := strings.TrimSpace(segment.Text)
+					if len(trim) == 0 {
+						return
+					}
+					last := subtitleManager.Last(sessionId)
+					if last == nil {
+						store := subtitle.Segment{
+							StartTime: segment.Start,
+							EndTime:   segment.End,
+							Text:      segment.Text + " ",
+						}
+						subtitleManager.Add(sessionId, store)
+						return
+					}
+					newSegment, merged := subtitle.TryMerge(last, &subtitle.Segment{
+						StartTime: segment.Start,
+						EndTime:   segment.End,
+						Text:      segment.Text,
+					})
+					if merged {
+						last.StartTime = newSegment.StartTime
+						last.EndTime = newSegment.EndTime
+						last.Text = newSegment.Text
+						return
+					}
+					subtitleManager.Add(sessionId, subtitle.Segment{
+						StartTime: segment.Start,
+						EndTime:   segment.End,
+						Text:      segment.Text,
+					})
+				}
+				err = transcription.Transcribe(whisperContext, audioFile, filepath.Join(modelPath, body.Model), whisperOptions)
+				whisperCancelFunc()
+				if err != nil {
+					whisperCancelFunc()
+					logger.Sugar().Errorf("failed to transcribe file: %s, err: %s", audioTarget, err)
+					task.FailedTask(sessionId, err)
+					return
+				}
+				<-whisperContext.Done()
+			}
 		}
 	}()
 	c.JSON(200, struct{}{})

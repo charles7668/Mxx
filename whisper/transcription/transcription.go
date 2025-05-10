@@ -27,6 +27,9 @@ func getModelNameWithExtension(modelName string) string {
 func Transcribe(ctx context.Context, filePath, modelName string, transcribeOptions TranscribeOptions) error {
 	modelFile := getModelNameWithExtension(modelName)
 	model, err := whisper.New(modelFile)
+	defer func(model whisper.Model) {
+		_ = model.Close()
+	}(model)
 	if err != nil {
 		return errors.New("failed to create model: " + err.Error())
 	}
@@ -100,6 +103,7 @@ func getWhisperContext(model whisper.Model, options TranscribeOptions) (whisper.
 		return nil, errors.New("failed to set language: " + options.Language)
 	}
 	whisperContext.SetMaxSegmentLength(1)
+	whisperContext.SetThreads(8)
 	whisperContext.SetTokenTimestamps(true)
 	return whisperContext, nil
 }
