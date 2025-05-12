@@ -17,12 +17,6 @@ import (
 //go:embed web/dist/*
 var webDist embed.FS
 
-//go:embed web/dist/assets/*
-var webAssetsFS embed.FS
-
-//go:embed web/dist/fonts/*
-var webFontsFS embed.FS
-
 func main() {
 	args := os.Args
 	options, err := cmd.ParseArgs(args)
