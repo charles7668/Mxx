@@ -18,6 +18,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [whisperModel, setWhisperModel] = useState<string>("tiny");
+  const [whisperLang, setWhisperLang] = useState<string>("auto");
   const supportWhisperModels = useMemo(() => {
     return [
       { value: "tiny", label: "Tiny (75 MiB)" },
@@ -36,6 +37,18 @@ const SideMenu: React.FC<SideMenuProps> = ({
       { value: "large-v3-q5_0", label: "Large V3 Q5_0 (1.1 GiB)" },
       { value: "large-v3-turbo", label: "Large V3 Turbo (1.5 GiB)" },
       { value: "large-v3-turbo-q5_0", label: "Large V3 Turbo Q5_0 (547 MiB)" },
+    ];
+  }, []);
+
+  const supportWhipserLangs = useMemo(() => {
+    return [
+      { value: "auto", label: "Auto" },
+      { value: "en", label: "English" },
+      { value: "zh", label: "Chinese" },
+      { value: "ja", label: "Japanese" },
+      { value: "ko", label: "Korean" },
+      { value: "fr", label: "French" },
+      { value: "de", label: "German" },
     ];
   }, []);
 
@@ -129,9 +142,26 @@ const SideMenu: React.FC<SideMenuProps> = ({
           );
         })}
       </Select>
+      <Text>Whisper Language</Text>
+      <Select
+        value={whisperLang}
+        onChange={(e) => setWhisperLang(e.target.value)}
+        mb={2}
+      >
+        {supportWhipserLangs.map((model) => {
+          return (
+            <option key={model.value} value={model.value}>
+              {model.label}
+            </option>
+          );
+        })}
+      </Select>
       <Button
         onClick={() => {
-          onGenerateSubtitleClick({ Model: whisperModel });
+          onGenerateSubtitleClick({
+            Model: whisperModel,
+            Language: whisperLang,
+          });
         }}
         colorScheme="blue"
       >

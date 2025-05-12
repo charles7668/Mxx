@@ -258,6 +258,7 @@ func generateMediaSubtitles(c *gin.Context) {
 		subtitleManager := subtitle.GetManager()
 		subtitleManager.Clear(sessionId)
 		whisperOptions := transcription.CreateOptions()
+		whisperOptions.Language = body.Language
 		for i, cut := range cutSegments {
 			whisperContext, whisperCancelFunc := context.WithCancel(graceful.BackgroundContext)
 			audioFile := filepath.Join(tempUUID, "silent_"+strconv.Itoa(i+1)+".wav")
@@ -282,7 +283,7 @@ func generateMediaSubtitles(c *gin.Context) {
 					StartTime: segment.Start,
 					EndTime:   segment.End,
 					Text:      segment.Text,
-				})
+				}, body.Language)
 				if merged {
 					last.StartTime = newSegment.StartTime
 					last.EndTime = newSegment.EndTime
@@ -331,7 +332,7 @@ func generateMediaSubtitles(c *gin.Context) {
 						StartTime: segment.Start,
 						EndTime:   segment.End,
 						Text:      segment.Text,
-					})
+					}, body.Language)
 					if merged {
 						last.StartTime = newSegment.StartTime
 						last.EndTime = newSegment.EndTime

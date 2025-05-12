@@ -5,7 +5,10 @@ import (
 	"time"
 )
 
-func TryMerge(previous, current *Segment) (*Segment, bool) {
+func TryMerge(previous, current *Segment, language string) (*Segment, bool) {
+	if language == "zh" {
+		return nil, false
+	}
 	result := &Segment{
 		StartTime: previous.StartTime,
 		EndTime:   current.EndTime,
