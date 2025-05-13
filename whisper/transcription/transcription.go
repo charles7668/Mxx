@@ -51,6 +51,9 @@ func Transcribe(ctx context.Context, filePath, modelName string, transcribeOptio
 	} else {
 		data = buf.AsFloat32Buffer().Data
 	}
+	if len(data) == 0 {
+		return nil
+	}
 	whisperContext, err := getWhisperContext(model, transcribeOptions)
 	if err != nil {
 		return errors.New("failed to get whisper context: " + err.Error())
