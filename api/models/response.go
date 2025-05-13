@@ -25,3 +25,8 @@ type TaskStateResponse struct {
 	Task      string `json:"task"`
 	TaskState string `json:"taskState"`
 }
+
+type SummaryResponse struct {
+	Status  int    `json:"status"`
+	Summary string `json:"summary"`
+}

@@ -10,6 +10,7 @@ type Provider int
 
 const (
 	Ollama Provider = iota
+	Unknown
 )
 
 func PrepareRunner(provider Provider, opts map[string]string) (models.ChatRunner, error) {

@@ -58,6 +58,13 @@ func GetApiRouter(prefix string) *gin.Engine {
 		videos.GET("/:segment", getPreviewMediaFile)
 	}
 
+	chats := apiRouterGroup.Group("/chats")
+	{
+		chats.Use(sessionCheckMiddleware)
+		chats.Use(prepareLoggerWithSessionField)
+		chats.POST("", GetSummary)
+	}
+
 	return router
 }
 

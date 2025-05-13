@@ -102,3 +102,18 @@ func (m *Manager) Last(sessionId string) *Segment {
 	}
 	return &segments[len(segments)-1]
 }
+
+func (m *Manager) ToPlainText(sessionId string) string {
+	builder := strings.Builder{}
+	for _, segment := range m.GetSegments(sessionId) {
+		builder.WriteString("[")
+		builder.WriteString(segment.StartTime.String())
+		builder.WriteString(" -> ")
+		builder.WriteString(segment.EndTime.String())
+		builder.WriteString("] ")
+		builder.WriteString(segment.Text)
+		builder.WriteString("\n")
+	}
+
+	return builder.String()
+}

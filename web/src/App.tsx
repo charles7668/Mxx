@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import {
+  GenerateSummary,
   GetASSFile,
   GetMediaTaskStatusAsync,
   GetPreviewMediaUrl,
@@ -11,11 +12,15 @@ import { Box, Button, Text, Spinner, HStack } from "@chakra-ui/react";
 import { TaskStatus } from "./models/task_status.ts";
 import {
   ErrorResponse,
+  SummaryResponse,
   TaskStateResponse,
   ValueResponse,
 } from "./models/response.ts";
 import SideMenu from "./components/SideMenu.tsx";
-import { GenerateSubtitleRequest } from "./models/request.ts";
+import {
+  GenerateSubtitleRequest,
+  GenerateSummaryRequest,
+} from "./models/request.ts";
 import VideoPlayer from "./components/VideoPlayer.tsx";
 
 function App() {
@@ -29,6 +34,8 @@ function App() {
   const [subtitle, setSubtitle] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [showPreviewVideo, setShowPreviewVideo] = useState<boolean>(false);
+  const [showSummary, setShowSummary] = useState<boolean>(false);
+  const [summary, setSummary] = useState<string | null>(null);
 
   const renewTaskStatus = () => {
     setNeedRefreshTaskStatus(true);
@@ -96,6 +103,10 @@ function App() {
     }
   };
 
+  const showSummaryClickHandler = () => {
+    setShowSummary(!showSummary);
+  };
+
   const downloadASSClickHandler = async () => {
     const response = await GetASSFile();
     if (response === null) {
@@ -120,6 +131,24 @@ function App() {
 
   const handleUploadSuccess = () => {
     setVideoUrl(GetPreviewMediaUrl());
+  };
+
+  const handleGenerateSummaryClick = async (
+    request: GenerateSummaryRequest,
+  ) => {
+    renewTaskStatus();
+    const response = await GenerateSummary(request);
+    if (response === null) {
+      alert("Failed to generate summary");
+      return;
+    }
+    if (response.status !== 200) {
+      const errResp: ErrorResponse = await response.json();
+      alert(`Failed to generate summary: ${errResp.error}`);
+      return;
+    }
+    const data: SummaryResponse = await response.json();
+    setSummary(data.summary);
   };
 
   useEffect(() => {
@@ -179,6 +208,7 @@ function App() {
           renewTaskStatus={renewTaskStatus}
           onGenerateSubtitleClick={handleGenerateSubtitleClick}
           onUploadedSuccess={handleUploadSuccess}
+          onGenerateSummaryClick={handleGenerateSummaryClick}
         />
         <Box height="100%" display="flex" flexDirection="column" flex="1">
           {videoUrl && (
@@ -198,6 +228,9 @@ function App() {
           )}
 
           <HStack>
+            <Button onClick={showSummaryClickHandler}>
+              {showSummary ? "Show Subtitle" : "Show summary"}
+            </Button>
             <Button onClick={copyButtonHandler}>Copy</Button>
             <Button onClick={downloadASSClickHandler}>Download ASS</Button>
           </HStack>
@@ -212,7 +245,9 @@ function App() {
             border="3px solid red"
           >
             <Text fontSize="lg" fontWeight="bold" whiteSpace="pre-wrap">
-              {subtitle || "No subtitle generated yet."}
+              {showSummary && summary
+                ? summary
+                : subtitle || "No subtitle generated yet."}
             </Text>
           </Box>
         </Box>

@@ -49,7 +49,7 @@ func (r *OllamaRunner) Chat(ctx context.Context, characterMessage, prompt, conte
 		return "", err
 	}
 	if completion != nil {
-		fmt.Printf("Complete with %d choice", len(completion.Choices))
+		fmt.Printf("Complete with %d choice\n", len(completion.Choices))
 	}
 	return resultBuilder.String(), nil
 }

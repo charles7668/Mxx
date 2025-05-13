@@ -1,5 +1,8 @@
 import { SessionResponse } from "../models/response.ts";
-import { GenerateSubtitleRequest } from "../models/request.ts";
+import {
+  GenerateSubtitleRequest,
+  GenerateSummaryRequest,
+} from "../models/request.ts";
 
 const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "";
 console.log(`API URL: ${API_URL}`);
@@ -120,6 +123,18 @@ async function GetASSFile() {
   }
 }
 
+async function GenerateSummary(request: GenerateSummaryRequest) {
+  try {
+    return await fetchWithAuth(`${API_URL}/chats`, {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+  } catch (err) {
+    console.error("Error generating medias:", err);
+    return null;
+  }
+}
+
 export {
   GetSessionIdAsync,
   UploadMediaAsync,
@@ -129,4 +144,5 @@ export {
   GetSubtitleAsync,
   GetPreviewMediaUrl,
   GetASSFile,
+  GenerateSummary,
 };
