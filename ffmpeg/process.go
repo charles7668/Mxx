@@ -23,6 +23,15 @@ func silentSegmentsToCutSegments(segments []models.SilentSegment) []models.Segme
 			prevTime = segment.Start
 		}
 	}
+	// insert last segment -1 mean end of file
+	{
+		newSegment := models.Segment{
+			Start:    prevTime,
+			End:      -1,
+			Duration: -1,
+		}
+		result = append(result, newSegment)
+	}
 	return result
 }
 
@@ -48,43 +57,26 @@ func (f *FFMpeg) SplitBySilentSegmentsToAudio(segments []models.SilentSegment, i
 	for _, segment := range cutSegments {
 		count++
 		outputFile := getOutputPath(count)
-		cmd := exec.Command(
-			f.FFMpegPath,
+		var args []string
+		args = append(args,
 			"-y",
 			"-ss", durationFormat(segment.Start),
-			"-t", durationFormat(segment.Duration),
 			"-i", inputMediaFile,
-			"-vn",
-			"-ar", "16000",
-			"-ac", "1",
-			"-c:a", "pcm_s16le",
-			outputFile,
-		)
-		_, err := cmd.CombinedOutput()
-		if err != nil {
-			return nil, fmt.Errorf("failed to split audio: %w", err)
+			"-vn", "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le")
+		if segment.Duration > 0 {
+			args = append(args, "-t", durationFormat(segment.Duration))
 		}
-	}
-	// split to last
-	{
-		count++
-		outputFile := getOutputPath(count)
+		args = append(args, outputFile)
 		cmd := exec.Command(
 			f.FFMpegPath,
-			"-y",
-			"-ss", durationFormat(segments[len(segments)-1].Start),
-			"-i", inputMediaFile,
-			"-ar", "16000",
-			"-ac", "1",
-			"-vn",
-			"-c:a", "pcm_s16le",
-			outputFile,
+			args...,
 		)
 		_, err := cmd.CombinedOutput()
 		if err != nil {
 			return nil, fmt.Errorf("failed to split audio: %w", err)
 		}
 	}
+
 	return cutSegments, nil
 }
 
