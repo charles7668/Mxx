@@ -182,7 +182,8 @@ func TestGetSubtitlesRoute(t *testing.T) {
 	sessionId := session.GenerateSessionId()
 	session.Update(sessionId, time.Now())
 	requestBody := models.GenerateSubtitleRequest{
-		Model: "tiny",
+		Model:    "tiny",
+		Language: "en",
 	}
 	bodyBytes, err := json.Marshal(requestBody)
 	if err != nil {
@@ -225,7 +226,7 @@ func TestGetSubtitlesRoute(t *testing.T) {
 			t.Fatalf("Failed to unmarshal response: %v", err)
 		}
 		if response.TaskState != "Running" {
-			t.Logf("Task complett or failed : %s", response.TaskState)
+			t.Logf("Task complete or failed : %s", response.TaskState)
 			break
 		}
 		time.Sleep(5 * time.Second)
