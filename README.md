@@ -2,10 +2,15 @@
 
 🎬 **Mxx** is a user-friendly video subtitle generation tool that uses OpenAI's Whisper model to detect audio content and automatically generate subtitles.
 
+In addition to subtitle generation, Mxx also provides an **AI-powered summarization feature**, allowing users to quickly generate concise summaries of the video content based on the transcribed text.
+
 ## ✨ Features
 
 - 🗣️ **Automatic Speech Recognition (ASR)**  
   Transcribes spoken audio from videos into text using high-accuracy Whisper models.
+
+- 🤖 **AI-Powered Summarization**  
+  Generates intelligent summaries based on the transcribed content, helping users quickly grasp the main ideas of the video.
 
 - 🎞️ **Multi-Format Video Support**  
   Supports common video formats including MP4, MOV, MKV, and more.
