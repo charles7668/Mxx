@@ -41,6 +41,6 @@ clean: clean-backend clean-frontend
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test -v ./...  -tags '!exclude_test'
 	rm -rf $(CURDIR)/data/temp
 	rm -rf $(CURDIR)/data/media
