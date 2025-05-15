@@ -6,6 +6,7 @@ import {
   GetMediaTaskStatusAsync,
   GetPreviewMediaUrl,
   GetSubtitleAsync,
+  GetUploadedMediaAsync,
   StartGenerateSubtitleTaskAsync,
 } from './api/api.ts'
 import { Box, Button, Text, Spinner, HStack } from '@chakra-ui/react'
@@ -142,6 +143,16 @@ function App() {
     const data: SummaryResponse = await response.json()
     setSummary(data.summary)
   }
+
+  useEffect(() => {
+    if (!videoUrl) {
+      GetUploadedMediaAsync().then((response) => {
+        if (response?.status === 200) {
+          setVideoUrl(GetPreviewMediaUrl())
+        }
+      })
+    }
+  }, [videoUrl])
 
   useEffect(() => {
     const startTaskStatusTimer = () => {
