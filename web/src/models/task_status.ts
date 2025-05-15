@@ -1,4 +1,4 @@
 export class TaskStatus {
-  idle: boolean = true;
-  message: string = "Idle";
+  idle: boolean = true
+  message: string = 'Idle'
 }
