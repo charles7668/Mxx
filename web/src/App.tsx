@@ -248,7 +248,9 @@ function App() {
             border="3px solid red"
           >
             <Text fontSize="lg" fontWeight="bold" whiteSpace="pre-wrap">
-              {showSummary && summary ? summary : subtitle || 'No subtitle generated yet.'}
+              {showSummary
+                ? summary || 'No summary generated yet.'
+                : subtitle || 'No subtitle generated yet.'}
             </Text>
           </Box>
         </Box>
