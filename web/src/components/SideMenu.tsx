@@ -24,7 +24,10 @@ const SideMenu: React.FC<SideMenuProps> = ({
   const [llmProvider, setLlmProvider] = useState<string>('ollama')
   const [llmModel, setLlmModel] = useState<string>('mistral')
   const supportLLMs = useMemo(() => {
-    return [{ provider: 'ollama', models: ['mistral'] }]
+    return [
+      { provider: 'ollama', models: ['mistral'] },
+      { provider: 'openai', models: ['gpt-4', 'gpt-4o', 'gpt-4-turbo'] },
+    ]
   }, [])
   const supportWhisperModels = useMemo(() => {
     return [
