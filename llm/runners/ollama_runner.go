@@ -15,16 +15,17 @@ type OllamaRunner struct {
 	modelName string
 }
 
-func GetOllamaRunner(options map[string]string) (*OllamaRunner, error) {
+func GetOllamaRunner(opts models.RunnerOptions) (*OllamaRunner, error) {
 	result := &OllamaRunner{}
-	if _, exist := options["model"]; !exist {
-		return nil, fmt.Errorf("model not found in options")
+	if opts.ModelName == "" {
+		return nil, fmt.Errorf("please set model which you want to use")
 	}
+	result.modelName = opts.ModelName
 	return result, nil
 }
 
 func (r *OllamaRunner) Chat(ctx context.Context, characterMessage, prompt, contextMessage string) (string, error) {
-	llm, err := ollama.New(ollama.WithModel("mistral"))
+	llm, err := ollama.New(ollama.WithModel(r.modelName))
 	if err != nil {
 		log.Fatal(err)
 	}

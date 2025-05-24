@@ -6,7 +6,8 @@ import (
 	"Mxx/api/models"
 	"Mxx/api/subtitle"
 	"Mxx/api/task"
-	"Mxx/llm"
+	llmModel "Mxx/llm/models"
+	"Mxx/llm/runners"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -42,8 +43,8 @@ func GetSummary(c *gin.Context) {
 	defer task.CompleteTask(sessionId)
 	subtitleString := subtitleManager.ToPlainText(sessionId)
 
-	provider, err := llm.PrepareRunner(toProviderEnum(requestBody.Provider), map[string]string{
-		"model": requestBody.Model,
+	provider, err := runners.PrepareRunner(toProviderEnum(requestBody.Provider), func(options *llmModel.RunnerOptions) {
+		options.ModelName = requestBody.Model
 	})
 	if err != nil {
 		logger.Sugar().Errorf("prepare runner error: %v", err)
@@ -66,10 +67,12 @@ func GetSummary(c *gin.Context) {
 	})
 }
 
-func toProviderEnum(providerString string) llm.Provider {
+func toProviderEnum(providerString string) runners.Provider {
 	switch providerString {
 	case "ollama":
-		return llm.Ollama
+		return runners.Ollama
+	case "openai":
+		return runners.OpenAI
 	}
-	return llm.Unknown
+	return runners.Unknown
 }

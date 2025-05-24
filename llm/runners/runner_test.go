@@ -1,15 +1,16 @@
 //go:build exclude_test
 
-package llm
+package runners_test
 
 import (
+	"Mxx/llm/models"
 	"context"
 	"testing"
 )
 
 func TestPrepareRunner(t *testing.T) {
-	runner, err := PrepareRunner(Ollama, map[string]string{
-		"model": "mistral",
+	runner, err := PrepareRunner(Ollama, func(options *models.RunnerOptions) {
+		options.ModelName = "mistral"
 	})
 	if err != nil {
 		t.Fatalf("prepare runner error: %v", err)

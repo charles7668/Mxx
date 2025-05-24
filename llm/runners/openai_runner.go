@@ -15,11 +15,12 @@ type OpenAIRunner struct {
 	modelName string
 }
 
-func GetOpenAIRunner(options map[string]string) (*OllamaRunner, error) {
+func GetOpenAIRunner(opts models.RunnerOptions) (*OllamaRunner, error) {
 	result := &OllamaRunner{}
-	if _, exist := options["model"]; !exist {
-		return nil, fmt.Errorf("model not found in options")
+	if opts.ModelName == "" {
+		return nil, fmt.Errorf("please set model which you want to use")
 	}
+	result.modelName = opts.ModelName
 	return result, nil
 }
 
