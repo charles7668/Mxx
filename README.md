@@ -83,6 +83,7 @@ Use CLI commands to process video files directly from the terminal.
 
 > 💡 **Note:** It is recommended to compile the Whisper library yourself to enable more features such as GPU acceleration.  
 > Otherwise, the default prebuilt version in the `whisper/lib` folder will be used (GPU is **not enabled** by default).
+> 💡 **Note:** See how to enable GPU for whisper : [windows](./docs/windows-whisper.md)
 
 ### 🪟 Notes for Windows
 
